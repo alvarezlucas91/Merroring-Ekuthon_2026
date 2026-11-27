@@ -1,6 +1,8 @@
-# Teach AI a movement
+# Ekuthon 2026 - ML Motion Replay
 
-An Ekuthon 2026 demo for the Ekumen Technical Showcase. Participants scan a QR code, strap a phone to their forearm like a smartwatch, and repeat a movement for 20 seconds. The model adds it to its activity library in real time with its existing weights. On the big screen, an embedding map shows each participant moving toward the cluster for the activity they are performing.
+**Learn activities. Recognize them. Test your precision**
+
+A demo for the Ekumen Technical Showcase. Participants scan the **JOIN US** QR code, strap a phone to their forearm like a smartwatch, and repeat a movement for 20 seconds. The model adds it to its activity library in real time with its existing weights. On the big screen, an embedding map shows each participant moving toward the cluster for the activity they are performing. In **Guided exercise**, participants imitate a recorded movement and get a score based on timing, range, and shape.
 
 The demo combines wearable motion sensors, embeddings, few-shot learning with prototypes, open-set activity recognition, and real-time signal processing.
 
@@ -64,7 +66,7 @@ The recognition test has three simulated participants teach activities and four 
 
 ## Suggested demo (5 minutes)
 
-1. Show the QR code. Have two or three people connect and strap a phone to their forearm.
+1. Show the **JOIN US** QR code. Have two or three people connect and strap a phone to their forearm.
 2. Ask someone to invent a distinct, repeatable movement, such as dribbling an imaginary ball, writing in the air, or stirring a pot. Enter the name on their dashboard card and click **Teach**. A 3-second countdown starts a 20-second recording.
 3. When the new cluster appears on the map, have the participant repeat the activity and watch their circle move toward it.
 4. Have someone try an activity that has yet to be taught. Use the **Unknown** label to explain open-set recognition.
