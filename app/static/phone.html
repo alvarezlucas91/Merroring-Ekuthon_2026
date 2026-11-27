@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Enseñale a la IA un movimiento</title>
+<style>
+  :root { --bg:#0e1117; --card:#171b24; --line:#262c38; --text:#eef1f6; --muted:#8b93a3; --accent:#3d7bff; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; }
+  .screen { display:none; min-height:100%; padding: 28px 22px calc(28px + env(safe-area-inset-bottom)); flex-direction:column; gap:18px; }
+  .screen.on { display:flex; }
+  h1 { font-size: 28px; line-height:1.15; margin: 8px 0 0; letter-spacing:-0.02em; }
+  p { color: var(--muted); font-size: 16px; line-height: 1.45; margin: 0; }
+  .brand { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  input { width:100%; font-size: 18px; padding: 16px; border-radius: 14px; border:1px solid var(--line);
+    background: var(--card); color: var(--text); outline: none; }
+  input:focus { border-color: var(--accent); }
+  button { width:100%; font-size: 18px; font-weight: 600; padding: 17px; border-radius: 14px; border: 0;
+    background: var(--accent); color: white; }
+  button.ghost { background: transparent; color: var(--muted); font-weight: 500; font-size: 15px; padding: 10px; }
+  .spacer { flex: 1; }
+  .err { color: #ff8a7a; font-size: 15px; min-height: 1em; }
+  .illus { margin: 10px auto; width: 230px; height: 150px; position: relative; }
+  .arm { position:absolute; left:10px; top:60px; width:210px; height:46px; border-radius: 24px;
+    background: linear-gradient(#d9b59a, #c49a7d); }
+  .hand { position:absolute; right:-6px; top:52px; width:40px; height:62px; border-radius: 18px; background:#c49a7d; }
+  .phone { position:absolute; left:72px; top:44px; width:92px; height:78px; border-radius: 12px;
+    background:#1f2430; border: 3px solid #4a5263; }
+  .phone::after { content:""; position:absolute; inset:7px; border-radius:6px; background: var(--accent); opacity:.55; }
+  .band { position:absolute; left:100px; top:52px; width:36px; height:62px; background: rgba(0,0,0,.35); border-radius: 4px; }
+  .table { width: 180px; height: 10px; margin: 70px auto 0; background:#3a4150; border-radius: 4px; position:relative; }
+  .table::before { content:""; position:absolute; left:55px; top:-16px; width:70px; height:14px; border-radius:4px;
+    background:#1f2430; border:2px solid #4a5263; }
+  .live-act { font-size: 44px; font-weight: 750; letter-spacing: -0.02em; line-height: 1.05; margin-top: 10px; word-break: break-word; }
+  .bar { height: 12px; background: var(--card); border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+  .meta { display:flex; justify-content: space-between; color: var(--muted); font-size: 14px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius: 50%; background:#6b7280; margin-right:6px; }
+  .dot.ok { background:#22c55e; }
+  .overlay { position: fixed; inset: 0; background: rgba(8,10,14,.94); display:none; flex-direction: column;
+    align-items:center; justify-content:center; text-align:center; padding: 24px; gap: 12px; }
+  .overlay.on { display:flex; }
+  .big { font-size: 96px; font-weight: 800; line-height: 1; }
+  .rec { color:#ff5d5d; font-weight: 700; letter-spacing:.1em; text-transform: uppercase; font-size: 14px; }
+  .hint { color: var(--muted); font-size: 14px; text-align:center; }
+  .exbox { display:none; background: var(--card); border:1px solid var(--line); border-radius: 18px; padding: 18px; gap: 8px; flex-direction: column; }
+  .exbox.on { display:flex; }
+  .exkind { font-size: 13px; letter-spacing:.12em; text-transform: uppercase; color: var(--accent); font-weight: 650; }
+  .exmsg { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .exscore { font-size: 64px; font-weight: 800; line-height: 1; }
+  .extips { color: var(--muted); font-size: 15px; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<section class="screen on" id="s-hello">
+  <div class="brand">Ekumen · Ekuthon</div>
+  <h1>Enseñale a la IA un movimiento</h1>
+  <p>Tu celular tiene los mismos sensores que un smartwatch. Vamos a usarlos para que un modelo aprenda, en segundos, un movimiento que inventes vos.</p>
+  <input id="name" maxlength="24" placeholder="Tu nombre" autocomplete="off">
+  <div class="spacer"></div>
+  <p class="hint">Solo se usa el acelerómetro. No se guarda la señal, ni tu ubicación, ni nada personal.</p>
+  <div class="err" id="err-hello"></div>
+  <button id="btn-start">Empezar</button>
+</section>
+
+<section class="screen" id="s-calib">
+  <div class="brand">Paso 1 de 2</div>
+  <h1>Apoyá el celular boca arriba</h1>
+  <p>Sobre una mesa, quieto, 2 segundos. Así ajustamos los ejes de tu modelo de celular.</p>
+  <div class="table"></div>
+  <div class="spacer"></div>
+  <div class="err" id="err-calib"></div>
+  <button id="btn-calib">Ya está apoyado</button>
+  <button class="ghost" id="btn-skip">Saltar este paso</button>
+</section>
+
+<section class="screen" id="s-wear">
+  <div class="brand">Paso 2 de 2</div>
+  <h1>Ponete el celular en el antebrazo</h1>
+  <p>Con la banda, cerca de la muñeca, pantalla hacia afuera. Como si fuera un reloj grande.</p>
+  <div class="illus"><div class="arm"></div><div class="hand"></div><div class="phone"></div><div class="band"></div></div>
+  <div class="spacer"></div>
+  <button id="btn-wear">Listo</button>
+</section>
+
+<section class="screen" id="s-live">
+  <div class="brand" id="who">En vivo</div>
+  <div id="exbox" class="exbox">
+    <div class="exkind" id="exkind"></div>
+    <div class="exmsg" id="exmsg"></div>
+    <div class="exscore" id="exscore"></div>
+    <div class="extips" id="extips"></div>
+  </div>
+  <div id="actbox">
+    <p>La IA cree que estás haciendo:</p>
+    <div class="live-act" id="act">Esperando datos…</div>
+    <div class="bar"><div id="conf"></div></div>
+  </div>
+  <div class="meta"><span id="conf-txt">&nbsp;</span><span><span class="dot" id="net"></span><span id="rate">–</span></span></div>
+  <div class="spacer"></div>
+  <p class="hint">Mirá la pantalla grande. Cuando te toque, te vamos a pedir que repitas tu movimiento durante unos segundos.</p>
+</section>
+
+<div class="overlay" id="ov">
+  <div class="rec" id="ov-rec">Preparate</div>
+  <div class="big" id="ov-big">3</div>
+  <div style="font-size:24px;font-weight:700" id="ov-name"></div>
+  <p id="ov-sub">Hacé el movimiento sin parar</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const show = id => document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+  let pid = store.get('ekuthon_pid') || Math.random().toString(36).slice(2, 10);
+  store.set('ekuthon_pid', pid);
+  $('name').value = store.get('ekuthon_name') || '';
+
+  let sign = 1, buf = [], got = 0, ws = null, wsOk = false, lastState = null, learnedTimer = null;
+  const calib = [];
+
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x === null) return;
+    got++;
+    const t = (typeof e.timeStamp === 'number' && e.timeStamp > 0) ? e.timeStamp : performance.now();
+    if (calibrating) calib.push(a.z);
+    const r = e.rotationRate;
+    if (r && r.alpha !== null && r.beta !== null && r.gamma !== null) {
+      buf.push([Math.round(t * 10) / 10, sign * a.x, sign * a.y, sign * a.z, r.alpha, r.beta, r.gamma]);
+    } else {
+      buf.push([Math.round(t * 10) / 10, sign * a.x, sign * a.y, sign * a.z]);
+    }
+    if (buf.length > 2000) buf = buf.slice(-2000);
+  }
+  let calibrating = false;
+
+  async function askPermission() {
+    if (typeof DeviceMotionEvent === 'undefined') throw new Error('Este navegador no tiene sensores de movimiento.');
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      const r = await DeviceMotionEvent.requestPermission();
+      if (r !== 'granted') throw new Error('Necesitamos permiso para usar el sensor de movimiento.');
+    }
+    window.addEventListener('devicemotion', onMotion);
+  }
+
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
+
+  $('btn-start').onclick = async () => {
+    $('err-hello').textContent = '';
+    if (!window.isSecureContext) { $('err-hello').textContent = 'La página tiene que abrirse con https para leer los sensores.'; return; }
+    try { await askPermission(); } catch (e) { $('err-hello').textContent = e.message; return; }
+    store.set('ekuthon_name', $('name').value.trim());
+    keepAwake();
+    setTimeout(() => {
+      if (!got) { $('err-hello').textContent = 'No llegan datos del sensor. Probá con Chrome (Android) o Safari (iPhone).'; return; }
+      show('s-calib');
+    }, 1200);
+  };
+
+  $('btn-calib').onclick = () => {
+    $('err-calib').textContent = 'Midiendo…';
+    calib.length = 0; calibrating = true;
+    setTimeout(() => {
+      calibrating = false;
+      if (calib.length < 10) { $('err-calib').textContent = 'No llegaron datos, probá de nuevo.'; return; }
+      const z = calib.reduce((s, v) => s + v, 0) / calib.length;
+      if (Math.abs(z) < 7) { $('err-calib').textContent = 'Parece que no está plano. Apoyalo boca arriba y probá de nuevo.'; return; }
+      sign = z > 0 ? 1 : -1;  // convención: boca arriba = +g en z (igual que los relojes Android del dataset)
+      store.set('ekuthon_sign', String(sign));
+      $('err-calib').textContent = '';
+      show('s-wear');
+    }, 2000);
+  };
+  $('btn-skip').onclick = () => { sign = Number(store.get('ekuthon_sign') || 1); show('s-wear'); };
+  $('btn-wear').onclick = () => { show('s-live'); connect(); };
+
+  function connect() {
+    const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/phone';
+    ws = new WebSocket(url);
+    ws.onopen = () => { wsOk = true; ws.send(JSON.stringify({ type: 'hello', id: pid, name: store.get('ekuthon_name') || '' })); };
+    ws.onmessage = ev => {
+      const m = JSON.parse(ev.data);
+      if (m.type === 'welcome') { pid = m.id; $('who').textContent = 'En vivo · ' + (store.get('ekuthon_name') || 'vos'); }
+      if (m.type === 'state') render(m);
+    };
+    ws.onclose = () => { wsOk = false; $('net').classList.remove('ok'); setTimeout(connect, 1500); };
+    ws.onerror = () => { try { ws.close(); } catch (e) {} };
+  }
+  setInterval(() => {
+    if (ws && wsOk && ws.readyState === 1 && buf.length) {
+      ws.send(JSON.stringify({ type: 'samples', s: buf }));
+      buf = [];
+    }
+  }, 200);
+
+  function render(m) {
+    $('net').classList.toggle('ok', wsOk);
+    $('rate').textContent = m.rate ? m.rate + ' Hz' : 'conectado';
+    const ov = $('ov');
+    if (m.recording) {
+      ov.classList.add('on');
+      $('ov-name').textContent = m.recording.name;
+      if (m.recording.countdown > 0) {
+        $('ov-rec').textContent = 'Preparate'; $('ov-big').textContent = m.recording.countdown;
+        $('ov-sub').textContent = 'Empezá a hacer el movimiento';
+      } else {
+        $('ov-rec').textContent = '● Grabando'; $('ov-big').textContent = m.recording.remaining;
+        $('ov-sub').textContent = 'Seguí haciendo el movimiento sin parar';
+      }
+    } else if (lastState && lastState.recording) {
+      $('ov-rec').textContent = 'Listo'; $('ov-big').textContent = '¡Aprendido!';
+      $('ov-big').style.fontSize = '52px'; $('ov-sub').textContent = 'Ahora repetilo y mirá la pantalla';
+      clearTimeout(learnedTimer);
+      learnedTimer = setTimeout(() => { ov.classList.remove('on'); $('ov-big').style.fontSize = ''; }, 2500);
+    }
+    lastState = m;
+    const ex = m.ex;
+    $('exbox').classList.toggle('on', !!ex);
+    $('actbox').style.display = ex ? 'none' : '';
+    if (ex) {
+      $('exkind').textContent = ex.kind === 'reference' ? 'Grabando un movimiento nuevo'
+        : 'Imitando: ' + (ex.ref_name || '') + (ex.tempo ? ' · con tempo' : ' · sin tempo');
+      $('exmsg').textContent = ex.last !== null && ex.last !== undefined && ex.state === 'ready' ? 'Repetición ' + ex.n + '. Cuando quieras, otra.' : ex.msg;
+      $('exscore').textContent = ex.last !== null && ex.last !== undefined ? Math.round(ex.last * 100) + '%' : '';
+      $('exscore').style.color = ex.last === null || ex.last === undefined ? '' : (ex.last >= 0.8 ? '#22c55e' : ex.last >= 0.6 ? '#f2b84b' : '#ff6b6b');
+      $('extips').innerHTML = (ex.tips || []).map(t => '<div>' + t.replace(/[<>&]/g, '') + '</div>').join('');
+    }
+    const act = m.activity || 'Moviéndote… (todavía no aprendió nada)';
+    $('act').textContent = m.activity ? act : (m.rate ? 'Todavía no aprendió ninguna actividad' : 'Esperando datos…');
+    $('act').style.color = m.color || 'var(--text)';
+    const pct = Math.max(0, Math.min(1, m.score || 0));
+    $('conf').style.width = (pct * 100) + '%';
+    $('conf').style.background = m.color || 'var(--accent)';
+    $('conf-txt').textContent = m.activity && !ex ? 'Parecido: ' + Math.round(pct * 100) + '%' : ' ';
+  }
+})();
+</script>
+</body>
+</html>

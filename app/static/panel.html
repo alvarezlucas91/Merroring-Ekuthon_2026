@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel · Enseñale a la IA un movimiento</title>
+<style>
+  :root { --bg:#0b0e14; --card:#141923; --card2:#1a2030; --line:#252d3c; --text:#eef1f6; --muted:#8b93a3; --accent:#3d7bff; --unk:#6b7280; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; overflow:hidden; }
+  .app { display:grid; grid-template-columns: 1fr 420px; grid-template-rows: auto 1fr; height:100vh; gap: 16px; padding: 18px 22px; }
+  header { grid-column: 1 / 3; display:flex; align-items:center; gap: 24px; }
+  .titles { flex:1; }
+  .brand { font-size: 13px; letter-spacing:.14em; text-transform:uppercase; color: var(--accent); font-weight: 650; }
+  h1 { margin: 4px 0 2px; font-size: 34px; letter-spacing:-.02em; }
+  .sub { color: var(--muted); font-size: 15px; }
+  .qr { display:flex; align-items:center; gap: 14px; background: white; color:#111; padding: 8px 14px 8px 8px; border-radius: 14px; }
+  .qr img { width: 112px; height:112px; display:block; }
+  .qr b { display:block; font-size: 18px; }
+  .qr span { font-size: 12px; color:#555; max-width: 190px; display:block; word-break: break-all; }
+  .mapwrap { position:relative; background: radial-gradient(ellipse at center, #121827 0%, #0b0e14 75%); border:1px solid var(--line); border-radius: 18px; overflow:hidden; min-height: 0; }
+  canvas { width:100%; height:100%; display:block; }
+  .maplabel { position:absolute; left:16px; top:12px; color: var(--muted); font-size: 13px; }
+  .empty { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
+    color: var(--muted); font-size: 20px; line-height:1.5; padding: 40px; pointer-events:none; }
+  aside { display:flex; flex-direction:column; gap: 12px; min-height:0; }
+  .section-t { font-size: 12px; letter-spacing:.12em; text-transform: uppercase; color: var(--muted); margin: 2px 2px 0; display:flex; justify-content:space-between; }
+  .people { flex: 1; overflow:auto; display:flex; flex-direction:column; gap: 10px; padding-right: 2px; }
+  .p { background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .p.off { opacity:.45; }
+  .p .row { display:flex; align-items:center; gap: 10px; }
+  .p .nm { font-weight: 650; font-size: 16px; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .p .hz { color: var(--muted); font-size: 12px; }
+  .pill { font-weight: 700; font-size: 20px; margin: 6px 0 6px; letter-spacing:-.01em; }
+  .bar { height: 6px; background: var(--card2); border-radius: 4px; overflow:hidden; }
+  .bar > div { height:100%; width:0; transition: width .5s; }
+  .teach { margin-top: 10px; display:flex; gap: 8px; }
+  .teach input { flex:1; min-width:0; background: var(--card2); border:1px solid var(--line); color: var(--text); border-radius: 10px; padding: 9px 10px; font-size: 14px; }
+  button { background: var(--accent); color:white; border:0; border-radius: 10px; padding: 9px 12px; font-weight: 600; font-size: 14px; cursor:pointer; }
+  button.sec { background: var(--card2); color: var(--text); border:1px solid var(--line); }
+  button.link { background:none; color: var(--muted); padding: 2px 6px; font-weight: 500; }
+  .recbox { margin-top: 10px; background: #2a1518; border:1px solid #5a262d; border-radius: 10px; padding: 9px 12px; font-size: 14px; display:flex; justify-content:space-between; align-items:center; }
+  .recbox b { color:#ff6b6b; }
+  .acts { background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 10px 12px; max-height: 34vh; overflow:auto; }
+  .a { display:flex; align-items:center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .a:last-child { border-bottom:0; }
+  .sw { width: 12px; height:12px; border-radius: 4px; flex: none; }
+  .a .n { flex:1; font-weight: 600; }
+  .a .by { color: var(--muted); font-size: 12px; font-weight: 400; display:block; }
+  .ctl { display:none; background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 12px; gap: 10px; flex-direction:column; font-size: 14px; }
+  .ctl.on { display:flex; }
+  .ctl label { display:flex; justify-content:space-between; align-items:center; gap: 10px; color: var(--muted); }
+  .ctl input[type=range] { flex:1; }
+  .ctl .btns { display:flex; gap: 8px; flex-wrap: wrap; }
+  .toast { position: fixed; left: 50%; top: 24px; transform: translateX(-50%) translateY(-200px); background: #11351f; border:1px solid #1f7a45;
+    color: #d9ffe6; padding: 14px 22px; border-radius: 14px; font-size: 20px; font-weight: 650; transition: transform .35s; z-index: 5; }
+  .toast.on { transform: translateX(-50%) translateY(0); }
+  .status { font-size: 12px; color: var(--muted); }
+  .tabs { display:flex; gap: 6px; margin-top: 10px; }
+  .tab { background: var(--card); color: var(--muted); border:1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: 14px; }
+  .tab.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .exwrap { display:none; flex-direction: column; gap: 12px; min-height: 0; }
+  .refbar { background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 12px 16px; display:flex; flex-wrap: wrap; align-items:center; gap: 10px 18px; font-size: 15px; }
+  .refbar .muted, .muted { color: var(--muted); }
+  .reft { font-weight: 750; font-size: 20px; }
+  .refph { display:flex; gap: 8px; flex-wrap: wrap; }
+  .ph { background: var(--card2); border:1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 14px; }
+  .ph.pausa { border-color: #3b4f7a; }
+  .refedit { display:flex; gap: 8px; margin-left: auto; align-items:center; }
+  .refedit input { background: var(--card2); border:1px solid var(--line); color: var(--text); border-radius: 10px; padding: 7px 10px; font-size: 13px; width: 220px; }
+  .chartbox { position: relative; flex: 1; min-height: 0; background: radial-gradient(ellipse at center, #121827 0%, #0b0e14 75%); border:1px solid var(--line); border-radius: 18px; overflow:hidden; }
+  .chartlbl { position:absolute; left: 16px; top: 10px; font-size: 13px; color: var(--muted); }
+  .chartlbl b { color: var(--text); }
+  .results { display:grid; grid-template-columns: 0.9fr 1.5fr 0.9fr; gap: 12px; height: 238px; }
+  .rc { background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 14px 16px; overflow: auto; }
+  .rc h3 { margin: 0 0 8px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .sc-total { font-size: 64px; font-weight: 800; line-height: 1; margin: 2px 0 10px; }
+  .sc-row { display:grid; grid-template-columns: 74px 1fr 62px; align-items:center; gap: 8px; font-size: 14px; margin: 5px 0; }
+  .sc-bar { height: 8px; background: var(--card2); border-radius: 5px; overflow:hidden; }
+  .sc-bar > div { height:100%; }
+  table { width:100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align:left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 0 6px 6px 0; }
+  td { padding: 5px 6px 5px 0; border-top: 1px solid var(--line); }
+  .tips { margin-top: 8px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .rk { display:grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .rk:first-of-type { border-top: 0; }
+  .rk .pos { color: var(--muted); }
+  .rk .sub2 { color: var(--muted); font-size: 12px; display:block; }
+  .exrun { margin-top: 10px; background: #13203a; border:1px solid #2b4479; border-radius: 10px; padding: 9px 12px; font-size: 14px; display:flex; justify-content:space-between; align-items:center; gap: 8px; }
+  .exrun .ang { color: var(--muted); margin-left: 8px; }
+  button.wide { width: 100%; }
+  .lib { display:none; }
+  .li { display:flex; align-items:center; gap: 10px; padding: 9px 8px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+  .li + .li { margin-top: 4px; }
+  .li:hover { background: var(--card2); }
+  .li.on { background: #13203a; border-color: #2b4479; }
+  .li-main { flex: 1; min-width: 0; }
+  .li-main b { display:block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li-main .by { color: var(--muted); font-size: 12px; }
+  .teach button { flex: 1; }
+  .exrun.col { flex-direction: column; align-items: stretch; }
+  .btns2 { display:flex; gap: 8px; align-items:center; justify-content: flex-end; }
+  .modal { position: fixed; inset: 0; background: rgba(5,7,11,.72); display:none; align-items:center; justify-content:center; z-index: 10; }
+  .modal.on { display:flex; }
+  .mbox { width: min(620px, 92vw); max-height: 90vh; overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px; display:flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .mbox h2 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
+  .mchart { width: 100%; height: 170px; background: #0e131d; border:1px solid var(--line); border-radius: 12px; }
+  .fld { display:flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+  .fld input { background: var(--card2); border:1px solid var(--line); color: var(--text); border-radius: 10px; padding: 11px 12px; font-size: 16px; }
+  .mact { display:flex; justify-content:flex-end; gap: 10px; margin-top: 4px; }
+  .mact button { padding: 11px 18px; font-size: 15px; }
+  .mlist { display:flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow:auto; }
+  .opt { display:flex; align-items:center; gap: 12px; padding: 11px 12px; border:1px solid var(--line); border-radius: 12px; cursor:pointer; }
+  .opt.on { border-color: var(--accent); background: #13203a; }
+  .opt .dot2 { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #4a5263; flex: none; }
+  .opt.on .dot2 { border-color: var(--accent); background: radial-gradient(var(--accent) 45%, transparent 50%); }
+  .opt b { display:block; }
+  .opt span { color: var(--muted); font-size: 12px; }
+  .seg { display:flex; background: var(--card2); border:1px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; }
+  .seg button { flex: 1; background: transparent; color: var(--muted); font-size: 15px; padding: 10px; }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .small { font-size: 13px; line-height: 1.45; }
+  .modetag { display:inline-block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border:1px solid var(--line); border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
+  .sc-row.off { opacity: .4; }
+  button:disabled { opacity: .45; cursor: default; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="titles">
+      <div class="brand">Ekumen · Ekuthon 2026 · Wearables + few-shot learning</div>
+      <h1 id="h1">Enseñale a la IA un movimiento</h1>
+      <div class="sub" id="sub">Inventá un movimiento, repetilo 20 segundos y el modelo lo aprende en el momento. Sin reentrenar.</div>
+      <div class="tabs"><button class="tab on" id="tab-learn">Aprender movimientos</button><button class="tab" id="tab-ex">Ejercicio guiado</button></div>
+    </div>
+    <div class="qr"><img id="qr" alt="QR"><div><b>Sumate</b><span id="url"></span></div></div>
+  </header>
+
+  <div class="mapwrap">
+    <canvas id="map"></canvas>
+    <div class="maplabel">Mapa del espacio de embeddings (proyección 2D). Cada nube es una actividad aprendida; cada círculo, una persona en vivo.</div>
+    <div class="empty" id="empty">Todavía no hay actividades aprendidas.<br>Elegí a alguien de la derecha y tocá “Enseñar”.</div>
+  </div>
+
+  <div class="exwrap" id="exwrap">
+    <div class="refbar" id="refbar"></div>
+    <div class="chartbox"><canvas id="exchart"></canvas><div class="chartlbl" id="chartlbl"></div></div>
+    <div class="results">
+      <div class="rc" id="scorecard"></div>
+      <div class="rc" id="phasecard"></div>
+      <div class="rc" id="rankcard"></div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="section-t"><span>Personas conectadas</span><span id="count">0</span></div>
+    <div class="people" id="people"></div>
+    <div class="section-t"><span>Actividades aprendidas</span><button class="link" id="btn-ctl">Controles</button></div>
+    <div class="acts" id="acts"><div class="status">Ninguna todavía.</div></div>
+    <div class="acts lib" id="lib"></div>
+    <div class="ctl" id="ctl">
+     <div id="ctl-ex" style="display:none; flex-direction:column; gap:10px">
+      <label>Mostrar la referencia mientras imita <input type="checkbox" id="showref" checked></label>
+      <label>Quieto por debajo de (°/s) <input type="range" id="c-still" min="6" max="40" step="1"><b id="c-still-v"></b></label>
+      <label>Piso del umbral de pausa (°/s) <input type="range" id="c-hold" min="2" max="20" step="1"><b id="c-hold-v"></b></label>
+      <label>Exigencia en tiempo <input type="range" id="c-strict" min="0.5" max="3" step="0.1"><b id="c-strict-v"></b></label>
+      <div class="status">Puntaje: 40% tiempo, 30% amplitud, 30% forma.</div>
+     </div>
+     <div id="ctl-learn" style="display:flex; flex-direction:column; gap:10px">
+      <label>Umbral de “desconocida” <input type="range" id="th" min="0.2" max="0.95" step="0.01"><b id="thv"></b></label>
+      <label>Segundos de grabación
+        <select id="secs"><option>10</option><option>15</option><option selected>20</option><option>30</option></select></label>
+      <div class="btns">
+        <button class="sec" id="btn-base">Cargar actividades base (WISDM, experimental)</button>
+        <button class="sec" id="btn-reset">Borrar todo</button>
+      </div>
+      <div class="status" id="enc"></div>
+     </div>
+    </div>
+  </aside>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="m-save"><div class="mbox">
+  <h2>Guardar movimiento</h2>
+  <div class="muted" id="ms-sub"></div>
+  <canvas id="ms-chart" class="mchart"></canvas>
+  <div class="refph" id="ms-ph"></div>
+  <label class="fld">Nombre del ejercicio<input id="ms-name" maxlength="40" placeholder="Ej.: Subir la mano"></label>
+  <label class="fld">Nombres de las fases (opcional, separados por coma)<input id="ms-phases" maxlength="120"></label>
+  <div class="mact"><button class="link" id="ms-discard">Descartar</button><button id="ms-save">Guardar</button></div>
+</div></div>
+
+<div class="modal" id="m-imit"><div class="mbox">
+  <h2>Imitar movimiento</h2>
+  <div class="muted" id="mi-sub"></div>
+  <div class="mlist" id="mi-list"></div>
+  <div class="seg"><button id="mi-tempo" class="on">Con tempo</button><button id="mi-free">Sin tempo</button></div>
+  <div class="muted small" id="mi-desc"></div>
+  <div class="mact"><button class="link" id="mi-cancel">Cancelar</button><button id="mi-go">Empezar</button></div>
+</div></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const phoneUrl = location.origin + '/';
+  $('url').textContent = phoneUrl.replace(/^https?:\/\//, '');
+  $('qr').src = '/qr.svg?url=' + encodeURIComponent(phoneUrl);
+  $('btn-ctl').onclick = () => $('ctl').classList.toggle('on');
+
+  let ws, state = { activities: [], participants: [], colors: {} };
+  let exState = null, view = 'learn', showRef = true;
+  let lib = { items: [] }, selectedRef = null;
+  const libById = id => lib.items.find(x => x.id === id);
+  const exDrafts = {};
+  const exSession = pid => exState ? exState.sessions.find(s => s.pid === pid) : null;
+  const scoreColor = v => v >= 0.8 ? '#22c55e' : v >= 0.6 ? '#f2b84b' : '#ff6b6b';
+  const pct = v => Math.round(v * 100) + '%';
+  const drafts = {};          // pid -> nombre que se está escribiendo
+  const pos = {};             // pid -> posición animada
+  function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+
+  function connect() {
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/panel');
+    ws.onmessage = ev => {
+      const m = JSON.parse(ev.data);
+      if (m.type === 'exercise') { exState = m; renderEx(); renderPeople(); return; }
+      if (m.type === 'library') { lib = m; renderLib(); renderEx(); renderPeople(); return; }
+      if (m.type === 'toast') { toast(m.text); return; }
+      if (m.type !== 'state') return;
+      state = m;
+      (m.events || []).forEach(e => {
+        if (e.kind === 'learned') {
+          const p = m.participants.find(x => x.id === e.pid);
+          toast('Nueva actividad aprendida: “' + e.name + '”' + (p ? ' (enseñó ' + p.name + ')' : ''));
+        }
+      });
+      render();
+      renderActs();
+    };
+    ws.onclose = () => setTimeout(connect, 1000);
+  }
+  connect();
+
+  let toastT;
+  function toast(t) { $('toast').textContent = t; $('toast').classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('on'), 3500); }
+
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function colorOf(a) { return state.colors[a] || (a ? '#6b7280' : '#3a4150'); }
+
+  function render() {
+    // controles
+    if (document.activeElement !== $('th')) { $('th').value = state.threshold; }
+    $('thv').textContent = Number(state.threshold).toFixed(2);
+    $('secs').value = String(state.record_seconds);
+    $('enc').textContent = 'Encoder: ' + state.encoder;
+    $('empty').style.display = state.activities.length ? 'none' : 'flex';
+
+    renderPeople();
+  }
+
+  function renderPeople() {
+    // personas (sin pisar lo que se está escribiendo)
+    const box = $('people');
+    const online = state.participants.filter(p => p.online).length;
+    $('count').textContent = online + ' en línea';
+    const ids = state.participants.map(p => p.id);
+    [...box.children].forEach(el => { if (!ids.includes(el.dataset.id)) el.remove(); });
+    state.participants.forEach(p => {
+      let el = box.querySelector('[data-id="' + p.id + '"]');
+      if (!el) {
+        el = document.createElement('div'); el.className = 'p'; el.dataset.id = p.id;
+        el.innerHTML = '<div class="row"><span class="nm"></span><span class="hz"></span></div>' +
+          '<div class="pill"></div><div class="bar"><div></div></div><div class="slot"></div>';
+        box.appendChild(el);
+      }
+      el.classList.toggle('off', !p.online);
+      el.querySelector('.nm').textContent = p.name;
+      el.querySelector('.hz').textContent = p.online ? (p.rate ? p.rate + ' Hz' : 'conectando') : 'desconectado';
+      const pill = el.querySelector('.pill');
+      const bar = el.querySelector('.bar > div');
+      const slot = el.querySelector('.slot');
+      if (view === 'ex') {
+        const sess = exSession(p.id);
+        const last = sess && sess.last ? sess.last.total : null;
+        pill.textContent = sess ? (last !== null ? pct(last) + ' · repetición ' + sess.last.n : (sess.kind === 'reference' ? 'Grabando referencia' : 'Imitando'))
+          : (p.online ? 'Disponible' : 'sin datos');
+        pill.style.color = last !== null ? scoreColor(last) : (sess ? 'var(--accent)' : 'var(--muted)');
+        bar.style.width = (last !== null ? last * 100 : 0) + '%';
+        bar.style.background = last !== null ? scoreColor(last) : 'transparent';
+        exSlot(slot, p, sess);
+        return;
+      }
+      pill.textContent = p.activity || (p.online ? 'Esperando…' : 'sin datos');
+      pill.style.color = p.activity ? colorOf(p.activity) : 'var(--muted)';
+      bar.style.width = Math.max(0, Math.min(1, p.score)) * 100 + '%';
+      bar.style.background = colorOf(p.activity);
+      const mode = p.recording ? 'rec' : 'teach';
+      if (slot.dataset.mode !== mode || mode === 'rec') {
+        slot.dataset.mode = mode;
+        if (mode === 'rec') {
+          const r = p.recording;
+          slot.innerHTML = '<div class="recbox"><span><b>● ' + (r.countdown > 0 ? 'Empieza en ' + r.countdown : 'Grabando ' + r.remaining + ' s') +
+            '</b> · ' + esc(r.name) + '</span><button class="link" data-cancel>Cancelar</button></div>';
+          slot.querySelector('[data-cancel]').onclick = () => send({ type: 'cancel', pid: p.id });
+        } else {
+          slot.innerHTML = '<div class="teach"><input placeholder="Nombre del movimiento nuevo" maxlength="40"><button>Enseñar</button></div>';
+          const inp = slot.querySelector('input');
+          inp.value = drafts[p.id] || '';
+          inp.oninput = () => drafts[p.id] = inp.value;
+          const go = () => { const n = inp.value.trim(); if (!n) { inp.focus(); return; }
+            send({ type: 'record', pid: p.id, name: n, seconds: Number($('secs').value) }); drafts[p.id] = ''; };
+          slot.querySelector('button').onclick = go;
+          inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+        }
+      }
+    });
+  }
+
+  function renderActs() {
+    // actividades
+    const acts = $('acts');
+    if (!state.activities.length) acts.innerHTML = '<div class="status">Ninguna todavía.</div>';
+    else {
+      acts.innerHTML = state.activities.map(a =>
+        '<div class="a"><span class="sw" style="background:' + a.color + '"></span><span class="n">' + esc(a.name) +
+        '<span class="by">' + a.n + (a.n === 1 ? ' grabación' : ' grabaciones') + ' · ' + esc(a.by.slice(0, 4).join(', ')) + (a.by.length > 4 ? '…' : '') + '</span></span>' +
+        '<button class="link" data-del="' + esc(a.name) + '">borrar</button></div>').join('');
+      acts.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { if (confirmDel(b.dataset.del)) send({ type: 'delete', name: b.dataset.del }); });
+    }
+  }
+  // confirmación sin diálogos del navegador: segundo clic en 3 s
+  const armed = {};
+  function confirmDel(n) { if (armed[n] && Date.now() - armed[n] < 3000) { delete armed[n]; return true; } armed[n] = Date.now(); toast('Tocá “borrar” de nuevo para confirmar'); return false; }
+
+  $('th').oninput = () => { $('thv').textContent = Number($('th').value).toFixed(2); };
+  $('th').onchange = () => send({ type: 'threshold', value: Number($('th').value) });
+  $('secs').onchange = () => send({ type: 'record_seconds', value: Number($('secs').value) });
+  $('btn-base').onclick = () => { send({ type: 'load_base' }); toast('Cargando actividades base…'); };
+  let resetArmed = 0;
+  $('btn-reset').onclick = () => { if (Date.now() - resetArmed < 3000) { send({ type: 'reset' }); toast('Se borraron todas las actividades'); resetArmed = 0; } else { resetArmed = Date.now(); toast('Tocá “Borrar todo” de nuevo para confirmar'); } };
+
+
+  // ------------------------------------------------------------- ejercicio guiado
+  function setView(v) {
+    view = v;
+    $('tab-learn').classList.toggle('on', v === 'learn');
+    $('tab-ex').classList.toggle('on', v === 'ex');
+    document.querySelector('.mapwrap').style.display = v === 'learn' ? '' : 'none';
+    $('exwrap').style.display = v === 'ex' ? 'flex' : 'none';
+    $('ctl-ex').style.display = v === 'ex' ? 'flex' : 'none';
+    $('ctl-learn').style.display = v === 'learn' ? 'flex' : 'none';
+    $('acts').style.display = v === 'learn' ? '' : 'none';
+    $('lib').style.display = v === 'ex' ? 'block' : 'none';
+    $('h1').textContent = v === 'learn' ? 'Enseñale a la IA un movimiento' : 'Imitá el movimiento';
+    $('sub').textContent = v === 'learn'
+      ? 'Inventá un movimiento, repetilo 20 segundos y el modelo lo aprende en el momento. Sin reentrenar.'
+      : 'Grabá movimientos de referencia y elegí cuál imitar. El sistema mide tiempo, amplitud y forma de cada repetición.';
+    document.querySelectorAll('.slot').forEach(x => x.dataset.mode = '');
+    renderLib(); renderPeople(); renderEx(); resizeEx(); resize();
+  }
+  $('tab-learn').onclick = () => setView('learn');
+  $('tab-ex').onclick = () => setView('ex');
+  $('showref').onchange = () => { showRef = $('showref').checked; };
+  [['c-still', 'still_gyro', 0], ['c-hold', 'hold_gyro_min', 0], ['c-strict', 'strict_time', 1]].forEach(([id, key, dec]) => {
+    $(id).oninput = () => { $(id + '-v').textContent = Number($(id).value).toFixed(dec); };
+    $(id).onchange = () => send({ type: 'ex_cfg', key, value: Number($(id).value) });
+  });
+
+  const sessions = () => (exState ? exState.sessions : []);
+  const recordingSession = () => sessions().find(x => x.kind === 'reference' && ['calib', 'ready', 'rep'].includes(x.state));
+  function focusSession() {
+    const ss = sessions().filter(x => x.kind === 'attempt');
+    return ss.find(x => x.state === 'rep') || ss.filter(x => x.last).sort((a, b) => b.last.at - a.last.at)[0] || ss[0] || null;
+  }
+  function viewRefId() {
+    const f = focusSession();
+    if (f && f.state === 'rep' && libById(f.ref_id)) return f.ref_id;
+    if (selectedRef && libById(selectedRef)) return selectedRef;
+    if (f && libById(f.ref_id)) return f.ref_id;
+    return lib.items.length ? lib.items[lib.items.length - 1].id : null;
+  }
+
+  // ---- lista de movimientos guardados (apilados, el más nuevo arriba)
+  const armedDel = {};
+  function renderLib() {
+    if (view !== 'ex') return;
+    document.querySelector('#btn-ctl').parentElement.firstElementChild.textContent = 'Movimientos guardados (' + lib.items.length + ')';
+    const el = $('lib');
+    if (!lib.items.length) {
+      el.dataset.key = '';
+      el.innerHTML = '<div class="status">Todavía no hay movimientos guardados. Tocá “Grabar referencia” en la tarjeta de una persona.</div>';
+      return;
+    }
+    const cur = viewRefId();
+    const key = cur + '|' + lib.items.map(r => r.id + r.name + r.phases.length).join();
+    if (el.dataset.key === key) return;
+    el.dataset.key = key;
+    el.innerHTML = lib.items.slice().reverse().map(r =>
+      '<div class="li' + (r.id === cur ? ' on' : '') + '" data-id="' + r.id + '"><div class="li-main"><b>' + esc(r.name) + '</b><span class="by">' +
+      esc(r.by) + ' · ' + r.dur.toFixed(1) + ' s · ' + r.phases.length + (r.phases.length === 1 ? ' fase' : ' fases') +
+      '</span></div><button class="link" data-del="' + r.id + '">borrar</button></div>').join('');
+    el.querySelectorAll('.li').forEach(x => x.onclick = e => {
+      if (e.target.dataset.del) return;
+      selectedRef = x.dataset.id; renderLib(); renderEx();
+    });
+    el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+      const id = b.dataset.del;
+      if (armedDel[id] && Date.now() - armedDel[id] < 3000) { send({ type: 'ex_delete', ref_id: id }); delete armedDel[id]; }
+      else { armedDel[id] = Date.now(); toast('Tocá “borrar” de nuevo para borrar “' + libById(id).name + '”'); }
+    });
+  }
+
+  // ---- tarjetas de personas
+  function exSlot(slot, p, sess) {
+    const key = 'ex:' + (sess ? [sess.kind, sess.state, sess.msg, sess.ref_id, sess.tempo].join('|') : 'idle|' + lib.items.length);
+    if (slot.dataset.mode !== key) {
+      slot.dataset.mode = key;
+      if (!sess) {
+        slot.innerHTML = '<div class="teach"><button data-ref>Grabar referencia</button><button class="sec" data-imit ' +
+          (lib.items.length ? '' : 'disabled') + '>Imitar…</button></div>';
+        slot.querySelector('[data-ref]').onclick = () => send({ type: 'ex_reference', pid: p.id });
+        slot.querySelector('[data-imit]').onclick = () => openImit(p);
+      } else if (sess.kind === 'reference' && sess.state === 'pending') {
+        slot.innerHTML = '<div class="exrun"><span><b>Movimiento grabado</b> · falta guardarlo</span><button class="link" data-open>Guardar…</button></div>';
+        slot.querySelector('[data-open]').onclick = () => { delete saveDismissed[pendKey(sess)]; openSave(sess); };
+      } else if (sess.kind === 'reference') {
+        slot.innerHTML = '<div class="exrun col"><div><b>Grabando referencia</b> · ' + esc(sess.msg) + '<span class="ang"></span></div>' +
+          '<div class="btns2"><button class="link" data-cancel>Cancelar</button><button data-fin>Terminar</button></div></div>';
+        slot.querySelector('[data-fin]').onclick = () => send({ type: 'ex_finish', pid: p.id });
+        slot.querySelector('[data-cancel]').onclick = () => send({ type: 'ex_stop', pid: p.id });
+      } else {
+        slot.innerHTML = '<div class="exrun col"><div><b>Imitando</b> “' + esc(sess.ref_name || '') + '”<span class="modetag">' +
+          (sess.tempo ? 'con tempo' : 'sin tempo') + '</span></div><div class="muted">' + esc(sess.msg) + '<span class="ang"></span></div>' +
+          '<div class="btns2"><button class="link" data-stop>Terminar</button><button class="sec" data-close>Cerrar repetición</button></div></div>';
+        slot.querySelector('[data-close]').onclick = () => send({ type: 'ex_finish', pid: p.id });
+        slot.querySelector('[data-stop]').onclick = () => send({ type: 'ex_stop', pid: p.id });
+      }
+    }
+    const ang = slot.querySelector('.ang');
+    if (ang && sess) ang.textContent = '  ' + Math.round(sess.angle) + '°';
+  }
+
+  // ---- cartel "Guardar movimiento"
+  const saveDismissed = {};
+  let saveOpenFor = null;
+  const pendKey = s => s.pid + ':' + (s.pending ? s.pending.at : '');
+  function openSave(sess) {
+    saveOpenFor = sess;
+    const pd = sess.pending;
+    $('ms-sub').textContent = 'Grabado por ' + sess.name + ' · ' + pd.dur.toFixed(1) + ' s · ' + Math.round(pd.peak) + '°';
+    $('ms-ph').innerHTML = pd.phases.map(x => '<span class="ph ' + x[3] + '">' + esc(x[0]) + ' <b>' + (x[2] - x[1]).toFixed(1) + ' s</b></span>').join('');
+    $('ms-name').value = '';
+    $('ms-phases').value = pd.phases.map(x => x[0]).join(', ');
+    $('m-save').classList.add('on');
+    setTimeout(() => { drawCurve($('ms-chart'), pd.curve, pd.phases, null, '#e8eefc'); $('ms-name').focus(); }, 30);
+  }
+  function closeSave() { $('m-save').classList.remove('on'); saveOpenFor = null; }
+  $('ms-save').onclick = () => {
+    if (!saveOpenFor) return;
+    const name = $('ms-name').value.trim();
+    if (!name) { $('ms-name').focus(); toast('Ponele un nombre al movimiento'); return; }
+    send({ type: 'ex_save', pid: saveOpenFor.pid, name, phases: $('ms-phases').value.split(',').map(x => x.trim()) });
+    toast('Movimiento guardado: “' + name + '”');
+    selectedRef = null;
+    closeSave();
+  };
+  $('ms-name').onkeydown = e => { if (e.key === 'Enter') $('ms-save').onclick(); };
+  $('ms-discard').onclick = () => { if (saveOpenFor) send({ type: 'ex_discard', pid: saveOpenFor.pid }); closeSave(); };
+
+  // ---- cartel "Imitar movimiento"
+  let imitFor = null, imitRef = null, imitTempo = true;
+  function openImit(p) {
+    if (!lib.items.length) return;
+    imitFor = p;
+    imitRef = viewRefId() || lib.items[lib.items.length - 1].id;
+    $('mi-sub').textContent = 'Para ' + p.name + '. Elegí el movimiento y cómo se evalúa.';
+    renderImit();
+    $('m-imit').classList.add('on');
+  }
+  function renderImit() {
+    $('mi-list').innerHTML = lib.items.slice().reverse().map(r =>
+      '<div class="opt' + (r.id === imitRef ? ' on' : '') + '" data-id="' + r.id + '"><span class="dot2"></span><div><b>' + esc(r.name) +
+      '</b><span>' + esc(r.by) + ' · ' + r.dur.toFixed(1) + ' s · ' + r.phases.map(x => esc(x[0]) + ' ' + (x[2] - x[1]).toFixed(1) + ' s').join(' · ') +
+      '</span></div></div>').join('');
+    $('mi-list').querySelectorAll('.opt').forEach(o => o.onclick = () => { imitRef = o.dataset.id; renderImit(); });
+    $('mi-tempo').classList.toggle('on', imitTempo);
+    $('mi-free').classList.toggle('on', !imitTempo);
+    const w = exState ? exState.weights : { tiempo: 0.4, amplitud: 0.3, forma: 0.3 };
+    const wf = exState ? exState.weights_free : { amplitud: 0.4, forma: 0.6 };
+    $('mi-desc').innerHTML = imitTempo
+      ? '<b>Con tempo:</b> cuenta cuánto tarda cada fase del movimiento, además de la amplitud y la forma (' +
+        Math.round(w.tiempo * 100) + '% tiempo, ' + Math.round(w.amplitud * 100) + '% amplitud, ' + Math.round(w.forma * 100) + '% forma).'
+      : '<b>Sin tempo:</b> solo cuánto se parece el movimiento a la referencia, sin importar la velocidad (' +
+        Math.round(wf.forma * 100) + '% forma, ' + Math.round(wf.amplitud * 100) + '% amplitud). Los tiempos se muestran, pero no suman.';
+  }
+  $('mi-tempo').onclick = () => { imitTempo = true; renderImit(); };
+  $('mi-free').onclick = () => { imitTempo = false; renderImit(); };
+  $('mi-cancel').onclick = () => $('m-imit').classList.remove('on');
+  $('mi-go').onclick = () => {
+    if (!imitFor || !imitRef) return;
+    send({ type: 'ex_attempt', pid: imitFor.id, ref_id: imitRef, tempo: imitTempo });
+    selectedRef = imitRef;
+    $('m-imit').classList.remove('on');
+  };
+
+  // ---- vista principal
+  function renderEx() {
+    if (!exState || view !== 'ex') return;
+    const c = exState.cfg;
+    [['c-still', 'still_gyro', 0], ['c-hold', 'hold_gyro_min', 0], ['c-strict', 'strict_time', 1]].forEach(([id, key, dec]) => {
+      if (document.activeElement !== $(id)) { $(id).value = c[key]; $(id + '-v').textContent = Number(c[key]).toFixed(dec); }
+    });
+    // cartel de guardar: se abre solo cuando una referencia queda pendiente
+    const pend = sessions().find(x => x.state === 'pending' && x.pending);
+    if (pend && !saveOpenFor && !saveDismissed[pendKey(pend)]) { saveDismissed[pendKey(pend)] = true; openSave(pend); }
+    if (saveOpenFor && !sessions().find(x => x.pid === saveOpenFor.pid && x.state === 'pending')) closeSave();
+
+    const rb = $('refbar'), rec = recordingSession();
+    const r = libById(viewRefId());
+    let key;
+    if (rec) key = 'rec|' + rec.name + '|' + rec.msg;
+    else key = r ? [r.id, r.name, r.phases.map(p => p[0]).join()].join('|') : 'none|' + lib.items.length;
+    if (rb.dataset.key !== key) {
+      rb.dataset.key = key;
+      if (rec) {
+        rb.innerHTML = '<div><span class="reft">Grabando movimiento nuevo</span><span class="muted"> · ' + esc(rec.name) + ' · ' + esc(rec.msg) +
+          '</span></div><div class="muted small">Al terminar el movimiento tocá <b>Terminar</b> en su tarjeta.</div>';
+      } else if (!r) {
+        rb.innerHTML = '<span class="muted">Todavía no hay movimientos guardados. En la tarjeta de una persona tocá <b>Grabar referencia</b>: ' +
+          'se queda quieta 2 segundos, hace el movimiento y vos tocás <b>Terminar</b>.</span>';
+      } else {
+        rb.innerHTML = '<div><span class="reft">' + esc(r.name) + '</span><span class="muted"> · grabado por ' + esc(r.by) + ' · ' +
+          r.dur.toFixed(1) + ' s · ' + Math.round(r.peak) + '°</span></div>' +
+          '<div class="refph">' + r.phases.map(p => '<span class="ph ' + p[3] + '">' + esc(p[0]) + ' <b>' + (p[2] - p[1]).toFixed(1) + ' s</b></span>').join('') + '</div>' +
+          '<div class="refedit"><input id="phnames" value="' + esc(r.phases.map(p => p[0]).join(', ')) + '"><button class="sec" id="btn-rename">Renombrar fases</button></div>';
+        $('btn-rename').onclick = () => send({ type: 'ex_rename', ref_id: r.id, names: $('phnames').value.split(',').map(x => x.trim()) });
+      }
+    }
+
+    const f = focusSession();
+    const fOk = f && r && f.ref_id === r.id;
+    const last = fOk ? f.last : null;
+    $('chartlbl').innerHTML = rec ? '<b>Grabando:</b> ' + esc(rec.name) + ' · ángulo respecto de la posición inicial'
+      : (r ? '<b>Blanco:</b> ' + esc(r.name) : '') + (fOk ? ' · <b>Color:</b> ' + esc(f.name) + (f.state === 'rep' ? ' (en vivo)' : last ? ' (repetición ' + last.n + ')' : '') +
+        '<span class="modetag">' + (f.tempo ? 'con tempo' : 'sin tempo') + '</span>' : '') + ' · ángulo respecto de la posición inicial';
+    if (last) {
+      const tempo = last.tempo !== false;
+      const rows = tempo ? [['Tiempo', 'tiempo', true], ['Amplitud', 'amplitud', true], ['Forma', 'forma', true]]
+        : [['Forma', 'forma', true], ['Amplitud', 'amplitud', true], ['Tiempo', 'tiempo', false]];
+      $('scorecard').innerHTML = '<h3>' + esc(f.name) + ' · repetición ' + last.n + '<span class="modetag">' + (tempo ? 'con tempo' : 'sin tempo') + '</span></h3>' +
+        '<div class="sc-total" style="color:' + scoreColor(last.total) + '">' + pct(last.total) + '</div>' +
+        rows.map(([lbl, k, on]) => '<div class="sc-row' + (on ? '' : ' off') + '"><span>' + lbl + '</span><div class="sc-bar"><div style="width:' + last[k] * 100 +
+          '%;background:' + scoreColor(last[k]) + '"></div></div><b>' + (on ? pct(last[k]) : 'no suma') + '</b></div>').join('');
+      const sign = d => (d > 0 ? '+' : '') + d.toFixed(1);
+      const dcol = sc => tempo ? scoreColor(sc) : 'var(--muted)';
+      $('phasecard').innerHTML = '<h3>Detalle por fase' + (tempo ? '' : ' (tiempos informativos)') + '</h3><table><tr><th>Fase</th><th>Referencia</th><th>Intento</th><th>Diferencia</th></tr>' +
+        last.phases.map(p => '<tr><td>' + esc(p.name) + '</td><td>' + p.ref.toFixed(1) + ' s</td><td>' + p.att.toFixed(1) + ' s</td><td style="color:' +
+          dcol(p.score) + '">' + sign(p.att - p.ref) + ' s</td></tr>').join('') +
+        '<tr><td>Amplitud</td><td>' + Math.round(last.amp_ref) + last.amp_unit + '</td><td>' + Math.round(last.amp_att) + last.amp_unit +
+        '</td><td style="color:' + scoreColor(last.amplitud) + '">' + sign(last.amp_att - last.amp_ref) + last.amp_unit + '</td></tr></table>' +
+        '<div class="tips">' + (last.tips.length ? last.tips.map(esc).join('<br>') : 'Muy parecido a la referencia.') + '</div>';
+    } else {
+      $('scorecard').innerHTML = '<h3>Puntaje</h3><div class="muted">Cuando alguien imite este movimiento y termine una repetición, acá aparece su puntaje.</div>';
+      $('phasecard').innerHTML = '<h3>Detalle por fase</h3><div class="muted">Duración de cada fase comparada con la referencia, amplitud y sugerencias.</div>';
+    }
+    // ranking del movimiento que se está viendo, con tempo y sin tempo por separado
+    let rk = '<h3>Ranking' + (r ? ' · ' + esc(r.name) : '') + '</h3>';
+    if (r) {
+      const block = (lbl, list) => list.length ? '<div class="muted small" style="margin:6px 0 2px">' + lbl + '</div>' + list.map((x, i) =>
+        '<div class="rk"><span class="pos">' + (i + 1) + '</span><span>' + esc(x.name) + '<span class="sub2">' + x.n + (x.n === 1 ? ' repetición' : ' repeticiones') +
+        ' · última ' + pct(x.last) + '</span></span><b style="color:' + scoreColor(x.best) + '">' + pct(x.best) + '</b></div>').join('') : '';
+      const body = block('Con tempo', r.ranking.tempo) + block('Sin tempo', r.ranking.libre);
+      rk += body || '<div class="muted">Mejor repetición de cada persona.</div>';
+      if (body) rk += '<button class="link" id="btn-rk-reset" style="margin-top:6px">reiniciar ranking</button>';
+    } else rk += '<div class="muted">Mejor repetición de cada persona.</div>';
+    $('rankcard').innerHTML = rk;
+    if ($('btn-rk-reset')) {
+      let armed = 0;
+      $('btn-rk-reset').onclick = () => {
+        if (Date.now() - armed < 3000) send({ type: 'ex_reset_ranking', ref_id: r.id });
+        else { armed = Date.now(); toast('Tocá “reiniciar ranking” de nuevo para confirmar'); }
+      };
+    }
+    renderLib();
+  }
+
+  // ---- gráfico
+  const ec = $('exchart'), ectx = ec.getContext('2d');
+  function resizeEx() { const r = ec.getBoundingClientRect(), d = window.devicePixelRatio || 1; if (!r.width) return; ec.width = r.width * d; ec.height = r.height * d; ectx.setTransform(d, 0, 0, d, 0, 0); }
+  window.addEventListener('resize', resizeEx);
+
+  function drawCurve(canvas, curve, phases, other, col, opts) {
+    opts = opts || {};
+    const R = canvas.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    if (!R.width) return;
+    if (Math.abs(canvas.width - R.width * d) > 2 || Math.abs(canvas.height - R.height * d) > 2) { canvas.width = R.width * d; canvas.height = R.height * d; }
+    const g = canvas.getContext('2d');
+    g.setTransform(d, 0, 0, d, 0, 0);
+    g.clearRect(0, 0, R.width, R.height);
+    const curves = [curve, other && other.curve].filter(Boolean);
+    const lastT = c => c.t.length ? c.t[c.t.length - 1] : 0;
+    const tmax = Math.max(5, ...curves.map(lastT)) * 1.08;
+    const amax = Math.max(30, ...curves.map(c => c.angle.length ? Math.max(...c.angle) : 0)) * 1.18;
+    const small = R.height < 260;
+    const L = small ? 44 : 86, Rm = 18, T = small ? 30 : 62, B = opts.rows ? 72 : (small ? 26 : 40);
+    const W = R.width - L - Rm, H = R.height - T - B;
+    const X = t => L + t / tmax * W, Y = a => T + H - a / amax * H;
+    g.font = '500 12px -apple-system, Segoe UI, Roboto, sans-serif'; g.textBaseline = 'middle';
+    const stepT = tmax > 40 ? 10 : tmax > 24 ? 5 : tmax > 12 ? 2 : 1;
+    for (let t = 0; t <= tmax; t += stepT) {
+      g.strokeStyle = 'rgba(255,255,255,0.05)'; g.beginPath(); g.moveTo(X(t), T); g.lineTo(X(t), T + H); g.stroke();
+      g.fillStyle = '#6f7887'; g.textAlign = 'center'; g.fillText(t + ' s', X(t), T + H + 14);
+    }
+    const stepA = amax > 150 ? 45 : amax > 70 ? 30 : 15;
+    for (let a = 0; a <= amax; a += stepA) {
+      g.strokeStyle = 'rgba(255,255,255,0.05)'; g.beginPath(); g.moveTo(L, Y(a)); g.lineTo(L + W, Y(a)); g.stroke();
+      g.fillStyle = '#6f7887'; g.textAlign = 'right'; g.fillText(a + '°', L - 8, Y(a));
+    }
+    if (phases && curve) {
+      phases.forEach(p => {
+        g.fillStyle = p[3] === 'pausa' ? 'rgba(61,123,255,0.10)' : 'rgba(255,255,255,0.025)';
+        g.fillRect(X(p[1]), T, X(p[2]) - X(p[1]), H);
+        g.strokeStyle = 'rgba(255,255,255,0.12)'; g.setLineDash([4, 4]);
+        g.beginPath(); g.moveTo(X(p[2]), T); g.lineTo(X(p[2]), T + H); g.stroke(); g.setLineDash([]);
+        g.fillStyle = '#aab3c2'; g.textAlign = 'center'; g.font = '600 ' + (small ? 11 : 13) + 'px -apple-system, Segoe UI, Roboto, sans-serif';
+        g.fillText(p[0] + '  ' + (p[2] - p[1]).toFixed(1) + ' s', (X(p[1]) + X(p[2])) / 2, T - 13);
+        g.font = '500 12px -apple-system, Segoe UI, Roboto, sans-serif';
+      });
+    }
+    const line = (c, color, w) => {
+      if (!c || c.t.length < 2) return;
+      g.strokeStyle = color; g.lineWidth = w; g.lineJoin = 'round';
+      g.beginPath(); c.t.forEach((t, i) => i ? g.lineTo(X(t), Y(c.angle[i])) : g.moveTo(X(t), Y(c.angle[i]))); g.stroke();
+    };
+    if (curve) line(curve, col || 'rgba(232,238,252,0.85)', 3);
+    if (other) {
+      line(other.curve, other.color, 3.5);
+      if (other.live && other.curve.t.length) {
+        const x = X(lastT(other.curve)), y = Y(other.curve.angle[other.curve.angle.length - 1]);
+        g.fillStyle = other.color; g.globalAlpha = 0.25; g.beginPath(); g.arc(x, y, 14, 0, 7); g.fill(); g.globalAlpha = 1;
+        g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill();
+      }
+    }
+    if (opts.rows) {
+      opts.rows.forEach(([lbl, ps], k) => {
+        const y = T + H + 28 + k * 18;
+        g.fillStyle = '#6f7887'; g.textAlign = 'right'; g.fillText(lbl, L - 8, y + 6);
+        ps.forEach(p => { g.fillStyle = p.c; g.globalAlpha = 0.85; g.fillRect(X(p.a) + 1, y, Math.max(2, X(p.b) - X(p.a) - 2), 12); g.globalAlpha = 1; });
+      });
+    }
+  }
+
+  function drawEx() {
+    if (!exState) return;
+    const rec = recordingSession();
+    if (rec) {  // grabando una referencia nueva: solo la curva en vivo
+      drawCurve(ec, null, null, { curve: rec.live || { t: [], angle: [] }, color: '#e8eefc', live: true });
+      return;
+    }
+    const r = libById(viewRefId());
+    const f = focusSession();
+    const fOk = f && r && f.ref_id === r.id;
+    let other = null, rows = null;
+    const hideRef = !showRef && fOk && f.state === 'rep';
+    if (fOk && f.state === 'rep' && f.live) other = { curve: f.live, color: '#3d7bff', live: true };
+    else if (fOk && f.last) {
+      other = { curve: f.last.curve, color: scoreColor(f.last.total) };
+      rows = [['Referencia', r.phases.map(p => ({ a: p[1], b: p[2], c: 'rgba(232,238,252,0.35)' }))],
+        ['Intento', f.last.phases.map(p => ({ a: p.start_att, b: p.end_att, c: f.last.tempo === false ? '#8b93a3' : scoreColor(p.score) }))]];
+    }
+    drawCurve(ec, hideRef || !r ? null : r.curve, hideRef || !r ? null : r.phases, other, null, { rows });
+  }
+
+  // ------------------------------------------------------------- mapa
+  const cv = $('map'), ctx = cv.getContext('2d');
+  function resize() { const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+  window.addEventListener('resize', resize); resize();
+  function toPx(xy) { const r = cv.getBoundingClientRect(), pad = 70; return [r.width / 2 + xy[0] * (r.width / 2 - pad), r.height / 2 - xy[1] * (r.height / 2 - pad)]; }
+
+  function draw(ts) {
+    if (view === 'ex') { drawEx(); requestAnimationFrame(draw); return; }
+    const r = cv.getBoundingClientRect();
+    ctx.clearRect(0, 0, r.width, r.height);
+    // grilla suave
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(r.width * i / 8, 0); ctx.lineTo(r.width * i / 8, r.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, r.height * i / 8); ctx.lineTo(r.width, r.height * i / 8); ctx.stroke(); }
+    // nubes
+    state.activities.forEach(a => {
+      ctx.fillStyle = a.color;
+      a.points.forEach(p => { if (!p) return; const [x, y] = toPx(p); ctx.globalAlpha = 0.28; ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill(); });
+      ctx.globalAlpha = 1;
+    });
+    state.activities.forEach(a => {
+      if (!a.centroid) return;
+      const px = a.points.filter(Boolean).map(toPx);
+      const x = toPx(a.centroid)[0];
+      const y = Math.min(cv.getBoundingClientRect().height - 18, Math.max(Math.max(...px.map(q => q[1])) + 26, toPx(a.centroid)[1] + 54));
+      ctx.font = '600 17px -apple-system, Segoe UI, Roboto, sans-serif';
+      const w = ctx.measureText(a.name).width;
+      ctx.fillStyle = 'rgba(11,14,20,0.75)'; ctx.fillRect(x - w / 2 - 8, y - 13, w + 16, 26);
+      ctx.fillStyle = a.color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(a.name, x, y);
+    });
+    // personas
+    state.participants.forEach(p => {
+      if (!p.online || !p.xy) return;
+      const target = toPx(p.xy);
+      const cur = pos[p.id] || (pos[p.id] = target.slice());
+      cur[0] += (target[0] - cur[0]) * 0.08; cur[1] += (target[1] - cur[1]) * 0.08;
+      const c = colorOf(p.activity);
+      // estela
+      if (p.trail && p.trail.length > 1) {
+        ctx.strokeStyle = c; ctx.globalAlpha = 0.25; ctx.lineWidth = 2; ctx.beginPath();
+        p.trail.forEach((t, i) => { const [x, y] = toPx(t); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      const pulse = 1 + 0.12 * Math.sin(ts / 220 + p.id.length);
+      ctx.fillStyle = c; ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.arc(cur[0], cur[1], 26 * pulse, 0, 7); ctx.fill();
+      ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(cur[0], cur[1], 13, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.font = '650 15px -apple-system, Segoe UI, Roboto, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(p.name, cur[0], cur[1] - 20);
+    });
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
