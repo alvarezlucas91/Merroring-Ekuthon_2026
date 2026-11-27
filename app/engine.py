@@ -17,8 +17,8 @@ from encoders import load_encoder
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE_FILE = os.environ.get("PROTOTYPES_FILE", os.path.join(ROOT, "data", "prototypes.json"))
-PALETTE = ["#2f6fdb", "#e0663a", "#1f9e74", "#c43d8c", "#d9a21b", "#6a4fd0", "#3aa6c4", "#8c6d3a",
-           "#d44b4b", "#5c8a2e"]
+PALETTE = ["#7D5FEF", "#D4F53C", "#F1FBD0", "#B3A3F7", "#8FB800", "#F7F5F0", "#674FE0", "#E6F99B",
+           "#9C86F3", "#C9C4BC"]  # Mirroring: violet, lime and their tints (03_colors)
 UNKNOWN = "Desconocida"
 STILL = "Sin movimiento"
 BASE_ACTIVITY_LABELS = {
