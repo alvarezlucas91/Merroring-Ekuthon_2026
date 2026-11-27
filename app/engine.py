@@ -21,6 +21,25 @@ PALETTE = ["#2f6fdb", "#e0663a", "#1f9e74", "#c43d8c", "#d9a21b", "#6a4fd0", "#3
            "#d44b4b", "#5c8a2e"]
 UNKNOWN = "Desconocida"
 STILL = "Sin movimiento"
+BASE_ACTIVITY_LABELS = {
+    "Caminar": "Walking",
+    "Trotar": "Jogging",
+    "Parado": "Standing",
+    "Aplaudir": "Clapping",
+    "Cepillarse los dientes": "Brushing teeth",
+}
+
+
+def activity_label(name):
+    if name == UNKNOWN:
+        return "Unknown"
+    if name == STILL:
+        return "Still"
+    if name and name.endswith(" (base)"):
+        base = BASE_ACTIVITY_LABELS.get(name.removesuffix(" (base)"))
+        if base:
+            return f"{base} (base)"
+    return name
 
 
 class Participant:
@@ -96,7 +115,7 @@ class Engine:
         with self.lock:
             p = self.participants.get(pid)
             if p is None:
-                p = self.participants[pid] = Participant(pid, name or f"Persona {len(self.participants) + 1}")
+                p = self.participants[pid] = Participant(pid, name or f"Participant {len(self.participants) + 1}")
             else:
                 p.name = name or p.name
             p.connected, p.last_seen = True, time.time()
@@ -172,7 +191,7 @@ class Engine:
             self.map_basis = None
             self.save()
 
-    def load_base(self, names=("Caminar", "Trotar", "Parado", "Aplaudir", "Cepillarse los dientes"), per_class=8):
+    def load_base(self, names=tuple(BASE_ACTIVITY_LABELS), per_class=8):
         """Precarga actividades desde WISDM (reloj en la muñeca). Experimental: el dominio es distinto."""
         f = os.path.join(ROOT, "data", "wisdm_watch_30hz.npz")
         if not os.path.exists(f):
@@ -279,7 +298,7 @@ class Engine:
                 cen = None
                 if pts and pts[0] is not None:
                     cen = np.mean(np.array(pts), axis=0).tolist()
-                acts.append({"name": n, "color": a["color"], "n": len(a["protos"]),
+                acts.append({"name": n, "label": activity_label(n), "color": a["color"], "n": len(a["protos"]),
                              "by": sorted({pr["by"] for pr in a["protos"]}), "points": pts, "centroid": cen})
         parts = []
         for p in self.participants.values():
@@ -292,7 +311,8 @@ class Engine:
                        "remaining": max(0, round(r["until"] - max(now, r["start"]))),
                        "windows": len(r["windows"])}
             parts.append({"id": p.id, "name": p.name, "online": p.connected and now - p.last_seen < 3,
-                          "activity": p.activity, "score": round(p.score, 3), "xy": p.xy,
+                          "activity": p.activity, "activity_label": activity_label(p.activity),
+                          "score": round(p.score, 3), "xy": p.xy,
                           "trail": list(p.trail), "rate": round(p.rate_hz), "recording": rec})
         return {"type": "state", "threshold": self.threshold, "encoder": self.encoder_name,
                 "record_seconds": self.record_seconds, "activities": acts, "participants": parts,
@@ -309,5 +329,6 @@ class Engine:
             rec = {"name": r["name"], "countdown": max(0, round(r["start"] - now)),
                    "remaining": max(0, round(r["until"] - max(now, r["start"])))}
         color = self.activities.get(p.activity, {}).get("color") if p.activity else None
-        return {"type": "state", "activity": p.activity, "score": round(p.score, 3), "color": color,
+        return {"type": "state", "activity": p.activity, "activity_label": activity_label(p.activity),
+                "score": round(p.score, 3), "color": color,
                 "recording": rec, "rate": round(p.rate_hz)}

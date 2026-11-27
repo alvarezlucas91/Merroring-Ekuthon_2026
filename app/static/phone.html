@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Enseñale a la IA un movimiento</title>
+<title>Teach AI a movement</title>
 <style>
   :root { --bg:#0e1117; --card:#171b24; --line:#262c38; --text:#eef1f6; --muted:#8b93a3; --accent:#3d7bff; }
   * { box-sizing: border-box; }
@@ -57,37 +57,37 @@
 
 <section class="screen on" id="s-hello">
   <div class="brand">Ekumen · Ekuthon</div>
-  <h1>Enseñale a la IA un movimiento</h1>
-  <p>Tu celular tiene los mismos sensores que un smartwatch. Vamos a usarlos para que un modelo aprenda, en segundos, un movimiento que inventes vos.</p>
-  <input id="name" maxlength="24" placeholder="Tu nombre" autocomplete="off">
+  <h1>Teach AI a movement</h1>
+  <p>Use your phone’s motion sensors to teach the model a movement you invent.</p>
+  <input id="name" maxlength="24" placeholder="Your name" autocomplete="off">
   <div class="spacer"></div>
-  <p class="hint">Solo se usa el acelerómetro. No se guarda la señal, ni tu ubicación, ni nada personal.</p>
+  <p class="hint">The demo uses motion sensors. It saves movement examples and scores with the name you enter.</p>
   <div class="err" id="err-hello"></div>
-  <button id="btn-start">Empezar</button>
+  <button id="btn-start">Start</button>
 </section>
 
 <section class="screen" id="s-calib">
-  <div class="brand">Paso 1 de 2</div>
-  <h1>Apoyá el celular boca arriba</h1>
-  <p>Sobre una mesa, quieto, 2 segundos. Así ajustamos los ejes de tu modelo de celular.</p>
+  <div class="brand">Step 1 of 2</div>
+  <h1>Place your phone face up</h1>
+  <p>Leave it still on a table for two seconds so we can calibrate its motion sensor.</p>
   <div class="table"></div>
   <div class="spacer"></div>
   <div class="err" id="err-calib"></div>
-  <button id="btn-calib">Ya está apoyado</button>
-  <button class="ghost" id="btn-skip">Saltar este paso</button>
+  <button id="btn-calib">Calibrate</button>
+  <button class="ghost" id="btn-skip">Skip this step</button>
 </section>
 
 <section class="screen" id="s-wear">
-  <div class="brand">Paso 2 de 2</div>
-  <h1>Ponete el celular en el antebrazo</h1>
-  <p>Con la banda, cerca de la muñeca, pantalla hacia afuera. Como si fuera un reloj grande.</p>
+  <div class="brand">Step 2 of 2</div>
+  <h1>Strap the phone to your forearm</h1>
+  <p>Place the strap near your wrist with the screen facing out.</p>
   <div class="illus"><div class="arm"></div><div class="hand"></div><div class="phone"></div><div class="band"></div></div>
   <div class="spacer"></div>
-  <button id="btn-wear">Listo</button>
+  <button id="btn-wear">Ready</button>
 </section>
 
 <section class="screen" id="s-live">
-  <div class="brand" id="who">En vivo</div>
+  <div class="brand" id="who">Live</div>
   <div id="exbox" class="exbox">
     <div class="exkind" id="exkind"></div>
     <div class="exmsg" id="exmsg"></div>
@@ -95,20 +95,20 @@
     <div class="extips" id="extips"></div>
   </div>
   <div id="actbox">
-    <p>La IA cree que estás haciendo:</p>
-    <div class="live-act" id="act">Esperando datos…</div>
+    <p>Detected activity</p>
+    <div class="live-act" id="act">Waiting for data…</div>
     <div class="bar"><div id="conf"></div></div>
   </div>
   <div class="meta"><span id="conf-txt">&nbsp;</span><span><span class="dot" id="net"></span><span id="rate">–</span></span></div>
   <div class="spacer"></div>
-  <p class="hint">Mirá la pantalla grande. Cuando te toque, te vamos a pedir que repitas tu movimiento durante unos segundos.</p>
+  <p class="hint">Watch the big screen. When it’s your turn, repeat your movement for a few seconds.</p>
 </section>
 
 <div class="overlay" id="ov">
-  <div class="rec" id="ov-rec">Preparate</div>
+  <div class="rec" id="ov-rec">Get ready</div>
   <div class="big" id="ov-big">3</div>
   <div style="font-size:24px;font-weight:700" id="ov-name"></div>
-  <p id="ov-sub">Hacé el movimiento sin parar</p>
+  <p id="ov-sub">Keep repeating the movement</p>
 </div>
 
 <script>
@@ -143,10 +143,10 @@
   let calibrating = false;
 
   async function askPermission() {
-    if (typeof DeviceMotionEvent === 'undefined') throw new Error('Este navegador no tiene sensores de movimiento.');
+    if (typeof DeviceMotionEvent === 'undefined') throw new Error('This browser does not provide motion sensor data.');
     if (typeof DeviceMotionEvent.requestPermission === 'function') {
       const r = await DeviceMotionEvent.requestPermission();
-      if (r !== 'granted') throw new Error('Necesitamos permiso para usar el sensor de movimiento.');
+      if (r !== 'granted') throw new Error('Allow motion sensor access to continue.');
     }
     window.addEventListener('devicemotion', onMotion);
   }
@@ -159,25 +159,25 @@
 
   $('btn-start').onclick = async () => {
     $('err-hello').textContent = '';
-    if (!window.isSecureContext) { $('err-hello').textContent = 'La página tiene que abrirse con https para leer los sensores.'; return; }
+    if (!window.isSecureContext) { $('err-hello').textContent = 'Open this page over HTTPS to use the motion sensors.'; return; }
     try { await askPermission(); } catch (e) { $('err-hello').textContent = e.message; return; }
     store.set('ekuthon_name', $('name').value.trim());
     keepAwake();
     setTimeout(() => {
-      if (!got) { $('err-hello').textContent = 'No llegan datos del sensor. Probá con Chrome (Android) o Safari (iPhone).'; return; }
+      if (!got) { $('err-hello').textContent = 'No sensor data received. Try Chrome on Android or Safari on iPhone.'; return; }
       show('s-calib');
     }, 1200);
   };
 
   $('btn-calib').onclick = () => {
-    $('err-calib').textContent = 'Midiendo…';
+    $('err-calib').textContent = 'Calibrating…';
     calib.length = 0; calibrating = true;
     setTimeout(() => {
       calibrating = false;
-      if (calib.length < 10) { $('err-calib').textContent = 'No llegaron datos, probá de nuevo.'; return; }
+      if (calib.length < 10) { $('err-calib').textContent = 'No sensor data received. Try again.'; return; }
       const z = calib.reduce((s, v) => s + v, 0) / calib.length;
-      if (Math.abs(z) < 7) { $('err-calib').textContent = 'Parece que no está plano. Apoyalo boca arriba y probá de nuevo.'; return; }
-      sign = z > 0 ? 1 : -1;  // convención: boca arriba = +g en z (igual que los relojes Android del dataset)
+      if (Math.abs(z) < 7) { $('err-calib').textContent = 'Place your phone flat and face up, then try again.'; return; }
+      sign = z > 0 ? 1 : -1;  // Face up is +g on the z-axis, matching the Android watches in the dataset.
       store.set('ekuthon_sign', String(sign));
       $('err-calib').textContent = '';
       show('s-wear');
@@ -192,7 +192,7 @@
     ws.onopen = () => { wsOk = true; ws.send(JSON.stringify({ type: 'hello', id: pid, name: store.get('ekuthon_name') || '' })); };
     ws.onmessage = ev => {
       const m = JSON.parse(ev.data);
-      if (m.type === 'welcome') { pid = m.id; $('who').textContent = 'En vivo · ' + (store.get('ekuthon_name') || 'vos'); }
+      if (m.type === 'welcome') { pid = m.id; $('who').textContent = 'Live · ' + (store.get('ekuthon_name') || 'you'); }
       if (m.type === 'state') render(m);
     };
     ws.onclose = () => { wsOk = false; $('net').classList.remove('ok'); setTimeout(connect, 1500); };
@@ -207,21 +207,21 @@
 
   function render(m) {
     $('net').classList.toggle('ok', wsOk);
-    $('rate').textContent = m.rate ? m.rate + ' Hz' : 'conectado';
+    $('rate').textContent = m.rate ? m.rate + ' Hz' : 'Connected';
     const ov = $('ov');
     if (m.recording) {
       ov.classList.add('on');
       $('ov-name').textContent = m.recording.name;
       if (m.recording.countdown > 0) {
-        $('ov-rec').textContent = 'Preparate'; $('ov-big').textContent = m.recording.countdown;
-        $('ov-sub').textContent = 'Empezá a hacer el movimiento';
+        $('ov-rec').textContent = 'Get ready'; $('ov-big').textContent = m.recording.countdown;
+        $('ov-sub').textContent = 'Get ready to repeat the movement';
       } else {
-        $('ov-rec').textContent = '● Grabando'; $('ov-big').textContent = m.recording.remaining;
-        $('ov-sub').textContent = 'Seguí haciendo el movimiento sin parar';
+        $('ov-rec').textContent = '● Recording'; $('ov-big').textContent = m.recording.remaining;
+        $('ov-sub').textContent = 'Keep repeating the movement';
       }
     } else if (lastState && lastState.recording) {
-      $('ov-rec').textContent = 'Listo'; $('ov-big').textContent = '¡Aprendido!';
-      $('ov-big').style.fontSize = '52px'; $('ov-sub').textContent = 'Ahora repetilo y mirá la pantalla';
+      $('ov-rec').textContent = 'Done'; $('ov-big').textContent = 'Learned!';
+      $('ov-big').style.fontSize = '52px'; $('ov-sub').textContent = 'Repeat it and watch the big screen';
       clearTimeout(learnedTimer);
       learnedTimer = setTimeout(() => { ov.classList.remove('on'); $('ov-big').style.fontSize = ''; }, 2500);
     }
@@ -230,20 +230,19 @@
     $('exbox').classList.toggle('on', !!ex);
     $('actbox').style.display = ex ? 'none' : '';
     if (ex) {
-      $('exkind').textContent = ex.kind === 'reference' ? 'Grabando un movimiento nuevo'
-        : 'Imitando: ' + (ex.ref_name || '') + (ex.tempo ? ' · con tempo' : ' · sin tempo');
-      $('exmsg').textContent = ex.last !== null && ex.last !== undefined && ex.state === 'ready' ? 'Repetición ' + ex.n + '. Cuando quieras, otra.' : ex.msg;
+      $('exkind').textContent = ex.kind === 'reference' ? 'Recording a new movement'
+        : 'Imitating: ' + (ex.ref_name || '') + (ex.tempo ? ' · with tempo' : ' · without tempo');
+      $('exmsg').textContent = ex.last !== null && ex.last !== undefined && ex.state === 'ready' ? 'Rep ' + ex.n + '. Go again when ready.' : ex.msg;
       $('exscore').textContent = ex.last !== null && ex.last !== undefined ? Math.round(ex.last * 100) + '%' : '';
       $('exscore').style.color = ex.last === null || ex.last === undefined ? '' : (ex.last >= 0.8 ? '#22c55e' : ex.last >= 0.6 ? '#f2b84b' : '#ff6b6b');
       $('extips').innerHTML = (ex.tips || []).map(t => '<div>' + t.replace(/[<>&]/g, '') + '</div>').join('');
     }
-    const act = m.activity || 'Moviéndote… (todavía no aprendió nada)';
-    $('act').textContent = m.activity ? act : (m.rate ? 'Todavía no aprendió ninguna actividad' : 'Esperando datos…');
+    $('act').textContent = m.activity_label || (m.rate ? 'No activities learned yet' : 'Waiting for data…');
     $('act').style.color = m.color || 'var(--text)';
     const pct = Math.max(0, Math.min(1, m.score || 0));
     $('conf').style.width = (pct * 100) + '%';
     $('conf').style.background = m.color || 'var(--accent)';
-    $('conf-txt').textContent = m.activity && !ex ? 'Parecido: ' + Math.round(pct * 100) + '%' : ' ';
+    $('conf-txt').textContent = m.activity && !ex ? 'Similarity: ' + Math.round(pct * 100) + '%' : ' ';
   }
 })();
 </script>

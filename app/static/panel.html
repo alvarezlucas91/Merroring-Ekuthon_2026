@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel · Enseñale a la IA un movimiento</title>
+<title>Dashboard · Teach AI a movement</title>
 <style>
   :root { --bg:#0b0e14; --card:#141923; --card2:#1a2030; --line:#252d3c; --text:#eef1f6; --muted:#8b93a3; --accent:#3d7bff; --unk:#6b7280; }
   * { box-sizing:border-box; }
@@ -131,17 +131,17 @@
   <header>
     <div class="titles">
       <div class="brand">Ekumen · Ekuthon 2026 · Wearables + few-shot learning</div>
-      <h1 id="h1">Enseñale a la IA un movimiento</h1>
-      <div class="sub" id="sub">Inventá un movimiento, repetilo 20 segundos y el modelo lo aprende en el momento. Sin reentrenar.</div>
-      <div class="tabs"><button class="tab on" id="tab-learn">Aprender movimientos</button><button class="tab" id="tab-ex">Ejercicio guiado</button></div>
+      <h1 id="h1">Teach AI a movement</h1>
+      <div class="sub" id="sub">Invent a movement and repeat it for 20 seconds to teach it to the model.</div>
+      <div class="tabs"><button class="tab on" id="tab-learn">Teach movements</button><button class="tab" id="tab-ex">Guided exercise</button></div>
     </div>
-    <div class="qr"><img id="qr" alt="QR"><div><b>Sumate</b><span id="url"></span></div></div>
+    <div class="qr"><img id="qr" alt="QR"><div><b>Join</b><span id="url"></span></div></div>
   </header>
 
   <div class="mapwrap">
     <canvas id="map"></canvas>
-    <div class="maplabel">Mapa del espacio de embeddings (proyección 2D). Cada nube es una actividad aprendida; cada círculo, una persona en vivo.</div>
-    <div class="empty" id="empty">Todavía no hay actividades aprendidas.<br>Elegí a alguien de la derecha y tocá “Enseñar”.</div>
+    <div class="maplabel">2D embedding map. Each cluster is a learned activity. Each circle is a live participant.</div>
+    <div class="empty" id="empty">No activities learned yet.<br>Choose a participant on the right and click “Teach”.</div>
   </div>
 
   <div class="exwrap" id="exwrap">
@@ -155,26 +155,26 @@
   </div>
 
   <aside>
-    <div class="section-t"><span>Personas conectadas</span><span id="count">0</span></div>
+    <div class="section-t"><span>Connected participants</span><span id="count">0</span></div>
     <div class="people" id="people"></div>
-    <div class="section-t"><span>Actividades aprendidas</span><button class="link" id="btn-ctl">Controles</button></div>
-    <div class="acts" id="acts"><div class="status">Ninguna todavía.</div></div>
+    <div class="section-t"><span id="library-heading">Learned activities</span><button class="link" id="btn-ctl">Controls</button></div>
+    <div class="acts" id="acts"><div class="status">None yet.</div></div>
     <div class="acts lib" id="lib"></div>
     <div class="ctl" id="ctl">
      <div id="ctl-ex" style="display:none; flex-direction:column; gap:10px">
-      <label>Mostrar la referencia mientras imita <input type="checkbox" id="showref" checked></label>
-      <label>Quieto por debajo de (°/s) <input type="range" id="c-still" min="6" max="40" step="1"><b id="c-still-v"></b></label>
-      <label>Piso del umbral de pausa (°/s) <input type="range" id="c-hold" min="2" max="20" step="1"><b id="c-hold-v"></b></label>
-      <label>Exigencia en tiempo <input type="range" id="c-strict" min="0.5" max="3" step="0.1"><b id="c-strict-v"></b></label>
-      <div class="status">Puntaje: 40% tiempo, 30% amplitud, 30% forma.</div>
+      <label>Show reference during attempts <input type="checkbox" id="showref" checked></label>
+      <label>Stillness threshold (°/s) <input type="range" id="c-still" min="6" max="40" step="1"><b id="c-still-v"></b></label>
+      <label>Minimum pause threshold (°/s) <input type="range" id="c-hold" min="2" max="20" step="1"><b id="c-hold-v"></b></label>
+      <label>Timing strictness <input type="range" id="c-strict" min="0.5" max="3" step="0.1"><b id="c-strict-v"></b></label>
+      <div class="status">Score weights are 40% timing, 30% range and 30% shape.</div>
      </div>
      <div id="ctl-learn" style="display:flex; flex-direction:column; gap:10px">
-      <label>Umbral de “desconocida” <input type="range" id="th" min="0.2" max="0.95" step="0.01"><b id="thv"></b></label>
-      <label>Segundos de grabación
+      <label>Unknown threshold <input type="range" id="th" min="0.2" max="0.95" step="0.01"><b id="thv"></b></label>
+      <label>Recording duration (s)
         <select id="secs"><option>10</option><option>15</option><option selected>20</option><option>30</option></select></label>
       <div class="btns">
-        <button class="sec" id="btn-base">Cargar actividades base (WISDM, experimental)</button>
-        <button class="sec" id="btn-reset">Borrar todo</button>
+        <button class="sec" id="btn-base">Load base activities (WISDM, experimental)</button>
+        <button class="sec" id="btn-reset">Clear all</button>
       </div>
       <div class="status" id="enc"></div>
      </div>
@@ -184,22 +184,22 @@
 <div class="toast" id="toast"></div>
 
 <div class="modal" id="m-save"><div class="mbox">
-  <h2>Guardar movimiento</h2>
+  <h2>Save movement</h2>
   <div class="muted" id="ms-sub"></div>
   <canvas id="ms-chart" class="mchart"></canvas>
   <div class="refph" id="ms-ph"></div>
-  <label class="fld">Nombre del ejercicio<input id="ms-name" maxlength="40" placeholder="Ej.: Subir la mano"></label>
-  <label class="fld">Nombres de las fases (opcional, separados por coma)<input id="ms-phases" maxlength="120"></label>
-  <div class="mact"><button class="link" id="ms-discard">Descartar</button><button id="ms-save">Guardar</button></div>
+  <label class="fld">Exercise name<input id="ms-name" maxlength="40" placeholder="e.g. Raise your hand"></label>
+  <label class="fld">Phase names (optional, comma-separated)<input id="ms-phases" maxlength="120"></label>
+  <div class="mact"><button class="link" id="ms-discard">Discard</button><button id="ms-save">Save</button></div>
 </div></div>
 
 <div class="modal" id="m-imit"><div class="mbox">
-  <h2>Imitar movimiento</h2>
+  <h2>Imitate movement</h2>
   <div class="muted" id="mi-sub"></div>
   <div class="mlist" id="mi-list"></div>
-  <div class="seg"><button id="mi-tempo" class="on">Con tempo</button><button id="mi-free">Sin tempo</button></div>
+  <div class="seg"><button id="mi-tempo" class="on">With tempo</button><button id="mi-free">Without tempo</button></div>
   <div class="muted small" id="mi-desc"></div>
-  <div class="mact"><button class="link" id="mi-cancel">Cancelar</button><button id="mi-go">Empezar</button></div>
+  <div class="mact"><button class="link" id="mi-cancel">Cancel</button><button id="mi-go">Start</button></div>
 </div></div>
 
 <script>
@@ -218,8 +218,8 @@
   const exSession = pid => exState ? exState.sessions.find(s => s.pid === pid) : null;
   const scoreColor = v => v >= 0.8 ? '#22c55e' : v >= 0.6 ? '#f2b84b' : '#ff6b6b';
   const pct = v => Math.round(v * 100) + '%';
-  const drafts = {};          // pid -> nombre que se está escribiendo
-  const pos = {};             // pid -> posición animada
+  const drafts = {};          // pid -> draft movement name
+  const pos = {};             // pid -> animated position
   function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
 
   function connect() {
@@ -234,7 +234,7 @@
       (m.events || []).forEach(e => {
         if (e.kind === 'learned') {
           const p = m.participants.find(x => x.id === e.pid);
-          toast('Nueva actividad aprendida: “' + e.name + '”' + (p ? ' (enseñó ' + p.name + ')' : ''));
+          toast('New activity learned: “' + e.name + '”' + (p ? ' (taught by ' + p.name + ')' : ''));
         }
       });
       render();
@@ -251,7 +251,7 @@
   function colorOf(a) { return state.colors[a] || (a ? '#6b7280' : '#3a4150'); }
 
   function render() {
-    // controles
+    // Controls
     if (document.activeElement !== $('th')) { $('th').value = state.threshold; }
     $('thv').textContent = Number(state.threshold).toFixed(2);
     $('secs').value = String(state.record_seconds);
@@ -262,10 +262,10 @@
   }
 
   function renderPeople() {
-    // personas (sin pisar lo que se está escribiendo)
+    // Preserve drafts during live updates.
     const box = $('people');
     const online = state.participants.filter(p => p.online).length;
-    $('count').textContent = online + ' en línea';
+    $('count').textContent = online + ' online';
     const ids = state.participants.map(p => p.id);
     [...box.children].forEach(el => { if (!ids.includes(el.dataset.id)) el.remove(); });
     state.participants.forEach(p => {
@@ -278,22 +278,22 @@
       }
       el.classList.toggle('off', !p.online);
       el.querySelector('.nm').textContent = p.name;
-      el.querySelector('.hz').textContent = p.online ? (p.rate ? p.rate + ' Hz' : 'conectando') : 'desconectado';
+      el.querySelector('.hz').textContent = p.online ? (p.rate ? p.rate + ' Hz' : 'Connecting') : 'Disconnected';
       const pill = el.querySelector('.pill');
       const bar = el.querySelector('.bar > div');
       const slot = el.querySelector('.slot');
       if (view === 'ex') {
         const sess = exSession(p.id);
         const last = sess && sess.last ? sess.last.total : null;
-        pill.textContent = sess ? (last !== null ? pct(last) + ' · repetición ' + sess.last.n : (sess.kind === 'reference' ? 'Grabando referencia' : 'Imitando'))
-          : (p.online ? 'Disponible' : 'sin datos');
+        pill.textContent = sess ? (last !== null ? pct(last) + ' · rep ' + sess.last.n : (sess.kind === 'reference' ? 'Recording reference' : 'Imitating'))
+          : (p.online ? 'Available' : 'No data');
         pill.style.color = last !== null ? scoreColor(last) : (sess ? 'var(--accent)' : 'var(--muted)');
         bar.style.width = (last !== null ? last * 100 : 0) + '%';
         bar.style.background = last !== null ? scoreColor(last) : 'transparent';
         exSlot(slot, p, sess);
         return;
       }
-      pill.textContent = p.activity || (p.online ? 'Esperando…' : 'sin datos');
+      pill.textContent = p.activity_label || (p.online ? 'Waiting…' : 'No data');
       pill.style.color = p.activity ? colorOf(p.activity) : 'var(--muted)';
       bar.style.width = Math.max(0, Math.min(1, p.score)) * 100 + '%';
       bar.style.background = colorOf(p.activity);
@@ -302,11 +302,11 @@
         slot.dataset.mode = mode;
         if (mode === 'rec') {
           const r = p.recording;
-          slot.innerHTML = '<div class="recbox"><span><b>● ' + (r.countdown > 0 ? 'Empieza en ' + r.countdown : 'Grabando ' + r.remaining + ' s') +
-            '</b> · ' + esc(r.name) + '</span><button class="link" data-cancel>Cancelar</button></div>';
+          slot.innerHTML = '<div class="recbox"><span><b>● ' + (r.countdown > 0 ? 'Starts in ' + r.countdown : 'Recording ' + r.remaining + ' s') +
+            '</b> · ' + esc(r.name) + '</span><button class="link" data-cancel>Cancel</button></div>';
           slot.querySelector('[data-cancel]').onclick = () => send({ type: 'cancel', pid: p.id });
         } else {
-          slot.innerHTML = '<div class="teach"><input placeholder="Nombre del movimiento nuevo" maxlength="40"><button>Enseñar</button></div>';
+          slot.innerHTML = '<div class="teach"><input placeholder="New movement name" maxlength="40"><button>Teach</button></div>';
           const inp = slot.querySelector('input');
           inp.value = drafts[p.id] || '';
           inp.oninput = () => drafts[p.id] = inp.value;
@@ -320,30 +320,30 @@
   }
 
   function renderActs() {
-    // actividades
+    // Learned activities
     const acts = $('acts');
-    if (!state.activities.length) acts.innerHTML = '<div class="status">Ninguna todavía.</div>';
+    if (!state.activities.length) acts.innerHTML = '<div class="status">None yet.</div>';
     else {
       acts.innerHTML = state.activities.map(a =>
-        '<div class="a"><span class="sw" style="background:' + a.color + '"></span><span class="n">' + esc(a.name) +
-        '<span class="by">' + a.n + (a.n === 1 ? ' grabación' : ' grabaciones') + ' · ' + esc(a.by.slice(0, 4).join(', ')) + (a.by.length > 4 ? '…' : '') + '</span></span>' +
-        '<button class="link" data-del="' + esc(a.name) + '">borrar</button></div>').join('');
+        '<div class="a"><span class="sw" style="background:' + a.color + '"></span><span class="n">' + esc(a.label) +
+        '<span class="by">' + a.n + (a.n === 1 ? ' recording' : ' recordings') + ' · ' + esc(a.by.slice(0, 4).join(', ')) + (a.by.length > 4 ? '…' : '') + '</span></span>' +
+        '<button class="link" data-del="' + esc(a.name) + '">Delete</button></div>').join('');
       acts.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { if (confirmDel(b.dataset.del)) send({ type: 'delete', name: b.dataset.del }); });
     }
   }
-  // confirmación sin diálogos del navegador: segundo clic en 3 s
+  // Confirm with a second click within 3 seconds.
   const armed = {};
-  function confirmDel(n) { if (armed[n] && Date.now() - armed[n] < 3000) { delete armed[n]; return true; } armed[n] = Date.now(); toast('Tocá “borrar” de nuevo para confirmar'); return false; }
+  function confirmDel(n) { if (armed[n] && Date.now() - armed[n] < 3000) { delete armed[n]; return true; } armed[n] = Date.now(); toast('Click “Delete” again to confirm'); return false; }
 
   $('th').oninput = () => { $('thv').textContent = Number($('th').value).toFixed(2); };
   $('th').onchange = () => send({ type: 'threshold', value: Number($('th').value) });
   $('secs').onchange = () => send({ type: 'record_seconds', value: Number($('secs').value) });
-  $('btn-base').onclick = () => { send({ type: 'load_base' }); toast('Cargando actividades base…'); };
+  $('btn-base').onclick = () => { send({ type: 'load_base' }); toast('Loading base activities…'); };
   let resetArmed = 0;
-  $('btn-reset').onclick = () => { if (Date.now() - resetArmed < 3000) { send({ type: 'reset' }); toast('Se borraron todas las actividades'); resetArmed = 0; } else { resetArmed = Date.now(); toast('Tocá “Borrar todo” de nuevo para confirmar'); } };
+  $('btn-reset').onclick = () => { if (Date.now() - resetArmed < 3000) { send({ type: 'reset' }); toast('All activities cleared'); resetArmed = 0; } else { resetArmed = Date.now(); toast('Click “Clear all” again to confirm'); } };
 
 
-  // ------------------------------------------------------------- ejercicio guiado
+  // ------------------------------------------------------------- guided exercise
   function setView(v) {
     view = v;
     $('tab-learn').classList.toggle('on', v === 'learn');
@@ -354,10 +354,11 @@
     $('ctl-learn').style.display = v === 'learn' ? 'flex' : 'none';
     $('acts').style.display = v === 'learn' ? '' : 'none';
     $('lib').style.display = v === 'ex' ? 'block' : 'none';
-    $('h1').textContent = v === 'learn' ? 'Enseñale a la IA un movimiento' : 'Imitá el movimiento';
+    if (v === 'learn') $('library-heading').textContent = 'Learned activities';
+    $('h1').textContent = v === 'learn' ? 'Teach AI a movement' : 'Imitate the movement';
     $('sub').textContent = v === 'learn'
-      ? 'Inventá un movimiento, repetilo 20 segundos y el modelo lo aprende en el momento. Sin reentrenar.'
-      : 'Grabá movimientos de referencia y elegí cuál imitar. El sistema mide tiempo, amplitud y forma de cada repetición.';
+      ? 'Invent a movement and repeat it for 20 seconds to teach it to the model.'
+      : 'Record a reference movement and choose one to imitate. Each rep is scored on timing, range and shape.';
     document.querySelectorAll('.slot').forEach(x => x.dataset.mode = '');
     renderLib(); renderPeople(); renderEx(); resizeEx(); resize();
   }
@@ -383,15 +384,15 @@
     return lib.items.length ? lib.items[lib.items.length - 1].id : null;
   }
 
-  // ---- lista de movimientos guardados (apilados, el más nuevo arriba)
+  // ---- saved movements (newest first)
   const armedDel = {};
   function renderLib() {
     if (view !== 'ex') return;
-    document.querySelector('#btn-ctl').parentElement.firstElementChild.textContent = 'Movimientos guardados (' + lib.items.length + ')';
+    $('library-heading').textContent = 'Saved movements (' + lib.items.length + ')';
     const el = $('lib');
     if (!lib.items.length) {
       el.dataset.key = '';
-      el.innerHTML = '<div class="status">Todavía no hay movimientos guardados. Tocá “Grabar referencia” en la tarjeta de una persona.</div>';
+      el.innerHTML = '<div class="status">No saved movements yet. Click “Record reference” on a participant’s card.</div>';
       return;
     }
     const cur = viewRefId();
@@ -400,8 +401,8 @@
     el.dataset.key = key;
     el.innerHTML = lib.items.slice().reverse().map(r =>
       '<div class="li' + (r.id === cur ? ' on' : '') + '" data-id="' + r.id + '"><div class="li-main"><b>' + esc(r.name) + '</b><span class="by">' +
-      esc(r.by) + ' · ' + r.dur.toFixed(1) + ' s · ' + r.phases.length + (r.phases.length === 1 ? ' fase' : ' fases') +
-      '</span></div><button class="link" data-del="' + r.id + '">borrar</button></div>').join('');
+      esc(r.by) + ' · ' + r.dur.toFixed(1) + ' s · ' + r.phases.length + (r.phases.length === 1 ? ' phase' : ' phases') +
+      '</span></div><button class="link" data-del="' + r.id + '">Delete</button></div>').join('');
     el.querySelectorAll('.li').forEach(x => x.onclick = e => {
       if (e.target.dataset.del) return;
       selectedRef = x.dataset.id; renderLib(); renderEx();
@@ -409,32 +410,32 @@
     el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
       const id = b.dataset.del;
       if (armedDel[id] && Date.now() - armedDel[id] < 3000) { send({ type: 'ex_delete', ref_id: id }); delete armedDel[id]; }
-      else { armedDel[id] = Date.now(); toast('Tocá “borrar” de nuevo para borrar “' + libById(id).name + '”'); }
+      else { armedDel[id] = Date.now(); toast('Click “Delete” again to remove “' + libById(id).name + '”'); }
     });
   }
 
-  // ---- tarjetas de personas
+  // ---- participant cards
   function exSlot(slot, p, sess) {
     const key = 'ex:' + (sess ? [sess.kind, sess.state, sess.msg, sess.ref_id, sess.tempo].join('|') : 'idle|' + lib.items.length);
     if (slot.dataset.mode !== key) {
       slot.dataset.mode = key;
       if (!sess) {
-        slot.innerHTML = '<div class="teach"><button data-ref>Grabar referencia</button><button class="sec" data-imit ' +
-          (lib.items.length ? '' : 'disabled') + '>Imitar…</button></div>';
+        slot.innerHTML = '<div class="teach"><button data-ref>Record reference</button><button class="sec" data-imit ' +
+          (lib.items.length ? '' : 'disabled') + '>Imitate…</button></div>';
         slot.querySelector('[data-ref]').onclick = () => send({ type: 'ex_reference', pid: p.id });
         slot.querySelector('[data-imit]').onclick = () => openImit(p);
       } else if (sess.kind === 'reference' && sess.state === 'pending') {
-        slot.innerHTML = '<div class="exrun"><span><b>Movimiento grabado</b> · falta guardarlo</span><button class="link" data-open>Guardar…</button></div>';
+        slot.innerHTML = '<div class="exrun"><span><b>Movement recorded</b> · Ready to save</span><button class="link" data-open>Save…</button></div>';
         slot.querySelector('[data-open]').onclick = () => { delete saveDismissed[pendKey(sess)]; openSave(sess); };
       } else if (sess.kind === 'reference') {
-        slot.innerHTML = '<div class="exrun col"><div><b>Grabando referencia</b> · ' + esc(sess.msg) + '<span class="ang"></span></div>' +
-          '<div class="btns2"><button class="link" data-cancel>Cancelar</button><button data-fin>Terminar</button></div></div>';
+        slot.innerHTML = '<div class="exrun col"><div><b>Recording reference</b> · ' + esc(sess.msg) + '<span class="ang"></span></div>' +
+          '<div class="btns2"><button class="link" data-cancel>Cancel</button><button data-fin>Finish</button></div></div>';
         slot.querySelector('[data-fin]').onclick = () => send({ type: 'ex_finish', pid: p.id });
         slot.querySelector('[data-cancel]').onclick = () => send({ type: 'ex_stop', pid: p.id });
       } else {
-        slot.innerHTML = '<div class="exrun col"><div><b>Imitando</b> “' + esc(sess.ref_name || '') + '”<span class="modetag">' +
-          (sess.tempo ? 'con tempo' : 'sin tempo') + '</span></div><div class="muted">' + esc(sess.msg) + '<span class="ang"></span></div>' +
-          '<div class="btns2"><button class="link" data-stop>Terminar</button><button class="sec" data-close>Cerrar repetición</button></div></div>';
+        slot.innerHTML = '<div class="exrun col"><div><b>Imitating</b> “' + esc(sess.ref_name || '') + '”<span class="modetag">' +
+          (sess.tempo ? 'with tempo' : 'without tempo') + '</span></div><div class="muted">' + esc(sess.msg) + '<span class="ang"></span></div>' +
+          '<div class="btns2"><button class="link" data-stop>Finish</button><button class="sec" data-close>End rep</button></div></div>';
         slot.querySelector('[data-close]').onclick = () => send({ type: 'ex_finish', pid: p.id });
         slot.querySelector('[data-stop]').onclick = () => send({ type: 'ex_stop', pid: p.id });
       }
@@ -443,14 +444,14 @@
     if (ang && sess) ang.textContent = '  ' + Math.round(sess.angle) + '°';
   }
 
-  // ---- cartel "Guardar movimiento"
+  // ---- save movement dialog
   const saveDismissed = {};
   let saveOpenFor = null;
   const pendKey = s => s.pid + ':' + (s.pending ? s.pending.at : '');
   function openSave(sess) {
     saveOpenFor = sess;
     const pd = sess.pending;
-    $('ms-sub').textContent = 'Grabado por ' + sess.name + ' · ' + pd.dur.toFixed(1) + ' s · ' + Math.round(pd.peak) + '°';
+    $('ms-sub').textContent = 'Recorded by ' + sess.name + ' · ' + pd.dur.toFixed(1) + ' s · ' + Math.round(pd.peak) + '°';
     $('ms-ph').innerHTML = pd.phases.map(x => '<span class="ph ' + x[3] + '">' + esc(x[0]) + ' <b>' + (x[2] - x[1]).toFixed(1) + ' s</b></span>').join('');
     $('ms-name').value = '';
     $('ms-phases').value = pd.phases.map(x => x[0]).join(', ');
@@ -461,22 +462,22 @@
   $('ms-save').onclick = () => {
     if (!saveOpenFor) return;
     const name = $('ms-name').value.trim();
-    if (!name) { $('ms-name').focus(); toast('Ponele un nombre al movimiento'); return; }
+    if (!name) { $('ms-name').focus(); toast('Enter a name for the movement'); return; }
     send({ type: 'ex_save', pid: saveOpenFor.pid, name, phases: $('ms-phases').value.split(',').map(x => x.trim()) });
-    toast('Movimiento guardado: “' + name + '”');
+    toast('Movement saved: “' + name + '”');
     selectedRef = null;
     closeSave();
   };
   $('ms-name').onkeydown = e => { if (e.key === 'Enter') $('ms-save').onclick(); };
   $('ms-discard').onclick = () => { if (saveOpenFor) send({ type: 'ex_discard', pid: saveOpenFor.pid }); closeSave(); };
 
-  // ---- cartel "Imitar movimiento"
+  // ---- imitation dialog
   let imitFor = null, imitRef = null, imitTempo = true;
   function openImit(p) {
     if (!lib.items.length) return;
     imitFor = p;
     imitRef = viewRefId() || lib.items[lib.items.length - 1].id;
-    $('mi-sub').textContent = 'Para ' + p.name + '. Elegí el movimiento y cómo se evalúa.';
+    $('mi-sub').textContent = 'Choose a movement and scoring mode for ' + p.name + '.';
     renderImit();
     $('m-imit').classList.add('on');
   }
@@ -491,10 +492,10 @@
     const w = exState ? exState.weights : { tiempo: 0.4, amplitud: 0.3, forma: 0.3 };
     const wf = exState ? exState.weights_free : { amplitud: 0.4, forma: 0.6 };
     $('mi-desc').innerHTML = imitTempo
-      ? '<b>Con tempo:</b> cuenta cuánto tarda cada fase del movimiento, además de la amplitud y la forma (' +
-        Math.round(w.tiempo * 100) + '% tiempo, ' + Math.round(w.amplitud * 100) + '% amplitud, ' + Math.round(w.forma * 100) + '% forma).'
-      : '<b>Sin tempo:</b> solo cuánto se parece el movimiento a la referencia, sin importar la velocidad (' +
-        Math.round(wf.forma * 100) + '% forma, ' + Math.round(wf.amplitud * 100) + '% amplitud). Los tiempos se muestran, pero no suman.';
+      ? '<b>With tempo</b> scores phase timing, range and shape (' +
+        Math.round(w.tiempo * 100) + '% timing, ' + Math.round(w.amplitud * 100) + '% range, ' + Math.round(w.forma * 100) + '% shape).'
+      : '<b>Without tempo</b> scores similarity at any speed (' +
+        Math.round(wf.forma * 100) + '% shape, ' + Math.round(wf.amplitud * 100) + '% range). Timing is shown for reference.';
   }
   $('mi-tempo').onclick = () => { imitTempo = true; renderImit(); };
   $('mi-free').onclick = () => { imitTempo = false; renderImit(); };
@@ -506,14 +507,14 @@
     $('m-imit').classList.remove('on');
   };
 
-  // ---- vista principal
+  // ---- exercise overview
   function renderEx() {
     if (!exState || view !== 'ex') return;
     const c = exState.cfg;
     [['c-still', 'still_gyro', 0], ['c-hold', 'hold_gyro_min', 0], ['c-strict', 'strict_time', 1]].forEach(([id, key, dec]) => {
       if (document.activeElement !== $(id)) { $(id).value = c[key]; $(id + '-v').textContent = Number(c[key]).toFixed(dec); }
     });
-    // cartel de guardar: se abre solo cuando una referencia queda pendiente
+    // Open the save dialog when a reference is ready.
     const pend = sessions().find(x => x.state === 'pending' && x.pending);
     if (pend && !saveOpenFor && !saveDismissed[pendKey(pend)]) { saveDismissed[pendKey(pend)] = true; openSave(pend); }
     if (saveOpenFor && !sessions().find(x => x.pid === saveOpenFor.pid && x.state === 'pending')) closeSave();
@@ -526,16 +527,16 @@
     if (rb.dataset.key !== key) {
       rb.dataset.key = key;
       if (rec) {
-        rb.innerHTML = '<div><span class="reft">Grabando movimiento nuevo</span><span class="muted"> · ' + esc(rec.name) + ' · ' + esc(rec.msg) +
-          '</span></div><div class="muted small">Al terminar el movimiento tocá <b>Terminar</b> en su tarjeta.</div>';
+        rb.innerHTML = '<div><span class="reft">Recording a new movement</span><span class="muted"> · ' + esc(rec.name) + ' · ' + esc(rec.msg) +
+          '</span></div><div class="muted small">Click <b>Finish</b> on their card when the movement ends.</div>';
       } else if (!r) {
-        rb.innerHTML = '<span class="muted">Todavía no hay movimientos guardados. En la tarjeta de una persona tocá <b>Grabar referencia</b>: ' +
-          'se queda quieta 2 segundos, hace el movimiento y vos tocás <b>Terminar</b>.</span>';
+        rb.innerHTML = '<span class="muted">Click <b>Record reference</b> on a participant’s card. ' +
+          'Have them hold still for two seconds and perform the movement. Then click <b>Finish</b>.</span>';
       } else {
-        rb.innerHTML = '<div><span class="reft">' + esc(r.name) + '</span><span class="muted"> · grabado por ' + esc(r.by) + ' · ' +
+        rb.innerHTML = '<div><span class="reft">' + esc(r.name) + '</span><span class="muted"> · recorded by ' + esc(r.by) + ' · ' +
           r.dur.toFixed(1) + ' s · ' + Math.round(r.peak) + '°</span></div>' +
           '<div class="refph">' + r.phases.map(p => '<span class="ph ' + p[3] + '">' + esc(p[0]) + ' <b>' + (p[2] - p[1]).toFixed(1) + ' s</b></span>').join('') + '</div>' +
-          '<div class="refedit"><input id="phnames" value="' + esc(r.phases.map(p => p[0]).join(', ')) + '"><button class="sec" id="btn-rename">Renombrar fases</button></div>';
+          '<div class="refedit"><input id="phnames" value="' + esc(r.phases.map(p => p[0]).join(', ')) + '"><button class="sec" id="btn-rename">Rename phases</button></div>';
         $('btn-rename').onclick = () => send({ type: 'ex_rename', ref_id: r.id, names: $('phnames').value.split(',').map(x => x.trim()) });
       }
     }
@@ -543,51 +544,51 @@
     const f = focusSession();
     const fOk = f && r && f.ref_id === r.id;
     const last = fOk ? f.last : null;
-    $('chartlbl').innerHTML = rec ? '<b>Grabando:</b> ' + esc(rec.name) + ' · ángulo respecto de la posición inicial'
-      : (r ? '<b>Blanco:</b> ' + esc(r.name) : '') + (fOk ? ' · <b>Color:</b> ' + esc(f.name) + (f.state === 'rep' ? ' (en vivo)' : last ? ' (repetición ' + last.n + ')' : '') +
-        '<span class="modetag">' + (f.tempo ? 'con tempo' : 'sin tempo') + '</span>' : '') + ' · ángulo respecto de la posición inicial';
+    $('chartlbl').innerHTML = rec ? '<b>Recording:</b> ' + esc(rec.name) + ' · angle from the starting position'
+      : (r ? '<b>White:</b> ' + esc(r.name) : '') + (fOk ? ' · <b>Color:</b> ' + esc(f.name) + (f.state === 'rep' ? ' (live)' : last ? ' (rep ' + last.n + ')' : '') +
+        '<span class="modetag">' + (f.tempo ? 'with tempo' : 'without tempo') + '</span>' : '') + ' · angle from the starting position';
     if (last) {
       const tempo = last.tempo !== false;
-      const rows = tempo ? [['Tiempo', 'tiempo', true], ['Amplitud', 'amplitud', true], ['Forma', 'forma', true]]
-        : [['Forma', 'forma', true], ['Amplitud', 'amplitud', true], ['Tiempo', 'tiempo', false]];
-      $('scorecard').innerHTML = '<h3>' + esc(f.name) + ' · repetición ' + last.n + '<span class="modetag">' + (tempo ? 'con tempo' : 'sin tempo') + '</span></h3>' +
+      const rows = tempo ? [['Timing', 'tiempo', true], ['Range', 'amplitud', true], ['Shape', 'forma', true]]
+        : [['Shape', 'forma', true], ['Range', 'amplitud', true], ['Timing', 'tiempo', false]];
+      $('scorecard').innerHTML = '<h3>' + esc(f.name) + ' · rep ' + last.n + '<span class="modetag">' + (tempo ? 'with tempo' : 'without tempo') + '</span></h3>' +
         '<div class="sc-total" style="color:' + scoreColor(last.total) + '">' + pct(last.total) + '</div>' +
         rows.map(([lbl, k, on]) => '<div class="sc-row' + (on ? '' : ' off') + '"><span>' + lbl + '</span><div class="sc-bar"><div style="width:' + last[k] * 100 +
-          '%;background:' + scoreColor(last[k]) + '"></div></div><b>' + (on ? pct(last[k]) : 'no suma') + '</b></div>').join('');
+          '%;background:' + scoreColor(last[k]) + '"></div></div><b>' + (on ? pct(last[k]) : 'Unscored') + '</b></div>').join('');
       const sign = d => (d > 0 ? '+' : '') + d.toFixed(1);
       const dcol = sc => tempo ? scoreColor(sc) : 'var(--muted)';
-      $('phasecard').innerHTML = '<h3>Detalle por fase' + (tempo ? '' : ' (tiempos informativos)') + '</h3><table><tr><th>Fase</th><th>Referencia</th><th>Intento</th><th>Diferencia</th></tr>' +
+      $('phasecard').innerHTML = '<h3>Phase breakdown' + (tempo ? '' : ' (timing for reference)') + '</h3><table><tr><th>Phase</th><th>Reference</th><th>Attempt</th><th>Difference</th></tr>' +
         last.phases.map(p => '<tr><td>' + esc(p.name) + '</td><td>' + p.ref.toFixed(1) + ' s</td><td>' + p.att.toFixed(1) + ' s</td><td style="color:' +
           dcol(p.score) + '">' + sign(p.att - p.ref) + ' s</td></tr>').join('') +
-        '<tr><td>Amplitud</td><td>' + Math.round(last.amp_ref) + last.amp_unit + '</td><td>' + Math.round(last.amp_att) + last.amp_unit +
+        '<tr><td>Range</td><td>' + Math.round(last.amp_ref) + last.amp_unit + '</td><td>' + Math.round(last.amp_att) + last.amp_unit +
         '</td><td style="color:' + scoreColor(last.amplitud) + '">' + sign(last.amp_att - last.amp_ref) + last.amp_unit + '</td></tr></table>' +
-        '<div class="tips">' + (last.tips.length ? last.tips.map(esc).join('<br>') : 'Muy parecido a la referencia.') + '</div>';
+        '<div class="tips">' + (last.tips.length ? last.tips.map(esc).join('<br>') : 'Very close to the reference.') + '</div>';
     } else {
-      $('scorecard').innerHTML = '<h3>Puntaje</h3><div class="muted">Cuando alguien imite este movimiento y termine una repetición, acá aparece su puntaje.</div>';
-      $('phasecard').innerHTML = '<h3>Detalle por fase</h3><div class="muted">Duración de cada fase comparada con la referencia, amplitud y sugerencias.</div>';
+      $('scorecard').innerHTML = '<h3>Score</h3><div class="muted">A score appears here after someone completes a rep.</div>';
+      $('phasecard').innerHTML = '<h3>Phase breakdown</h3><div class="muted">Compare phase timing and range with the reference.</div>';
     }
-    // ranking del movimiento que se está viendo, con tempo y sin tempo por separado
-    let rk = '<h3>Ranking' + (r ? ' · ' + esc(r.name) : '') + '</h3>';
+    // Leaderboards for the selected movement and scoring mode.
+    let rk = '<h3>Leaderboard' + (r ? ' · ' + esc(r.name) : '') + '</h3>';
     if (r) {
       const block = (lbl, list) => list.length ? '<div class="muted small" style="margin:6px 0 2px">' + lbl + '</div>' + list.map((x, i) =>
-        '<div class="rk"><span class="pos">' + (i + 1) + '</span><span>' + esc(x.name) + '<span class="sub2">' + x.n + (x.n === 1 ? ' repetición' : ' repeticiones') +
-        ' · última ' + pct(x.last) + '</span></span><b style="color:' + scoreColor(x.best) + '">' + pct(x.best) + '</b></div>').join('') : '';
-      const body = block('Con tempo', r.ranking.tempo) + block('Sin tempo', r.ranking.libre);
-      rk += body || '<div class="muted">Mejor repetición de cada persona.</div>';
-      if (body) rk += '<button class="link" id="btn-rk-reset" style="margin-top:6px">reiniciar ranking</button>';
-    } else rk += '<div class="muted">Mejor repetición de cada persona.</div>';
+        '<div class="rk"><span class="pos">' + (i + 1) + '</span><span>' + esc(x.name) + '<span class="sub2">' + x.n + (x.n === 1 ? ' rep' : ' reps') +
+        ' · latest ' + pct(x.last) + '</span></span><b style="color:' + scoreColor(x.best) + '">' + pct(x.best) + '</b></div>').join('') : '';
+      const body = block('With tempo', r.ranking.tempo) + block('Without tempo', r.ranking.libre);
+      rk += body || '<div class="muted">Best rep for each participant.</div>';
+      if (body) rk += '<button class="link" id="btn-rk-reset" style="margin-top:6px">Reset leaderboard</button>';
+    } else rk += '<div class="muted">Best rep for each participant.</div>';
     $('rankcard').innerHTML = rk;
     if ($('btn-rk-reset')) {
       let armed = 0;
       $('btn-rk-reset').onclick = () => {
         if (Date.now() - armed < 3000) send({ type: 'ex_reset_ranking', ref_id: r.id });
-        else { armed = Date.now(); toast('Tocá “reiniciar ranking” de nuevo para confirmar'); }
+        else { armed = Date.now(); toast('Click “Reset leaderboard” again to confirm'); }
       };
     }
     renderLib();
   }
 
-  // ---- gráfico
+  // ---- chart
   const ec = $('exchart'), ectx = ec.getContext('2d');
   function resizeEx() { const r = ec.getBoundingClientRect(), d = window.devicePixelRatio || 1; if (!r.width) return; ec.width = r.width * d; ec.height = r.height * d; ectx.setTransform(d, 0, 0, d, 0, 0); }
   window.addEventListener('resize', resizeEx);
@@ -656,7 +657,7 @@
   function drawEx() {
     if (!exState) return;
     const rec = recordingSession();
-    if (rec) {  // grabando una referencia nueva: solo la curva en vivo
+    if (rec) {  // Show the live curve while recording a reference.
       drawCurve(ec, null, null, { curve: rec.live || { t: [], angle: [] }, color: '#e8eefc', live: true });
       return;
     }
@@ -668,13 +669,13 @@
     if (fOk && f.state === 'rep' && f.live) other = { curve: f.live, color: '#3d7bff', live: true };
     else if (fOk && f.last) {
       other = { curve: f.last.curve, color: scoreColor(f.last.total) };
-      rows = [['Referencia', r.phases.map(p => ({ a: p[1], b: p[2], c: 'rgba(232,238,252,0.35)' }))],
-        ['Intento', f.last.phases.map(p => ({ a: p.start_att, b: p.end_att, c: f.last.tempo === false ? '#8b93a3' : scoreColor(p.score) }))]];
+      rows = [['Reference', r.phases.map(p => ({ a: p[1], b: p[2], c: 'rgba(232,238,252,0.35)' }))],
+        ['Attempt', f.last.phases.map(p => ({ a: p.start_att, b: p.end_att, c: f.last.tempo === false ? '#8b93a3' : scoreColor(p.score) }))]];
     }
     drawCurve(ec, hideRef || !r ? null : r.curve, hideRef || !r ? null : r.phases, other, null, { rows });
   }
 
-  // ------------------------------------------------------------- mapa
+  // ------------------------------------------------------------- map
   const cv = $('map'), ctx = cv.getContext('2d');
   function resize() { const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
   window.addEventListener('resize', resize); resize();
@@ -684,11 +685,11 @@
     if (view === 'ex') { drawEx(); requestAnimationFrame(draw); return; }
     const r = cv.getBoundingClientRect();
     ctx.clearRect(0, 0, r.width, r.height);
-    // grilla suave
+    // Grid
     ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
     for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(r.width * i / 8, 0); ctx.lineTo(r.width * i / 8, r.height); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, r.height * i / 8); ctx.lineTo(r.width, r.height * i / 8); ctx.stroke(); }
-    // nubes
+    // Clusters
     state.activities.forEach(a => {
       ctx.fillStyle = a.color;
       a.points.forEach(p => { if (!p) return; const [x, y] = toPx(p); ctx.globalAlpha = 0.28; ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill(); });
@@ -700,18 +701,18 @@
       const x = toPx(a.centroid)[0];
       const y = Math.min(cv.getBoundingClientRect().height - 18, Math.max(Math.max(...px.map(q => q[1])) + 26, toPx(a.centroid)[1] + 54));
       ctx.font = '600 17px -apple-system, Segoe UI, Roboto, sans-serif';
-      const w = ctx.measureText(a.name).width;
+      const w = ctx.measureText(a.label).width;
       ctx.fillStyle = 'rgba(11,14,20,0.75)'; ctx.fillRect(x - w / 2 - 8, y - 13, w + 16, 26);
-      ctx.fillStyle = a.color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(a.name, x, y);
+      ctx.fillStyle = a.color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(a.label, x, y);
     });
-    // personas
+    // Participants
     state.participants.forEach(p => {
       if (!p.online || !p.xy) return;
       const target = toPx(p.xy);
       const cur = pos[p.id] || (pos[p.id] = target.slice());
       cur[0] += (target[0] - cur[0]) * 0.08; cur[1] += (target[1] - cur[1]) * 0.08;
       const c = colorOf(p.activity);
-      // estela
+      // Trail
       if (p.trail && p.trail.length > 1) {
         ctx.strokeStyle = c; ctx.globalAlpha = 0.25; ctx.lineWidth = 2; ctx.beginPath();
         p.trail.forEach((t, i) => { const [x, y] = toPx(t); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); ctx.globalAlpha = 1;

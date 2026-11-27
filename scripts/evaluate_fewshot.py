@@ -168,29 +168,32 @@ def plot(results):
 
     colors = {"Features clásicas": "#9aa0a8", "CNN propia (Ekumen)": "#7fa7e8",
               "Híbrido: features + CNN propia": "#1d4fb8", "Oxford SSL (uso académico)": "#d9822b"}
-    titles = {"misma persona": "Reconoce a la misma persona", "otra persona": "Enseña una persona, reconoce a otra",
-              "dos personas enseñan": "Enseñan dos personas, reconoce a una tercera"}
+    labels = {"Features clásicas": "Handcrafted features", "CNN propia (Ekumen)": "Custom CNN (Ekumen)",
+              "Híbrido: features + CNN propia": "Hybrid: handcrafted features + custom CNN",
+              "Oxford SSL (uso académico)": "Oxford SSL (academic use)"}
+    titles = {"misma persona": "Same person teaches and performs", "otra persona": "One teaches, another performs",
+              "dos personas enseñan": "Two teach, a third performs"}
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.4), sharey=True)
     for ax, k in zip(axes, titles):
         for name, r in results.items():
             xs = list(r[k].keys())
             ys = [100 * v for v in r[k].values()]
-            ax.plot(xs, ys, marker="o", lw=2.2, color=colors.get(name, "#444"), label=name)
+            ax.plot(xs, ys, marker="o", lw=2.2, color=colors.get(name, "#444"), label=labels.get(name, name))
             if name.startswith(("Híbrido", "Oxford")):
                 ax.annotate(f"{ys[-1]:.0f}%", (xs[-1], ys[-1]), textcoords="offset points", xytext=(6, -3),
                             fontsize=9, color=colors.get(name, "#444"))
         ax.set_title(titles[k], fontsize=11, loc="left")
-        ax.set_xlabel("Segundos grabados para enseñar cada actividad")
+        ax.set_xlabel("Seconds recorded per activity")
         ax.set_xticks(DURATIONS)
         ax.axhline(100 / 6, color="#bbb", lw=1, ls="--")
-        ax.text(DURATIONS[0], 100 / 6 + 1.5, "azar (1 de 6)", fontsize=8, color="#999")
+        ax.text(DURATIONS[0], 100 / 6 + 1.5, "chance (1 in 6)", fontsize=8, color="#999")
         ax.set_ylim(0, 100)
         ax.grid(axis="y", color="#eee")
         for sp in ("top", "right"):
             ax.spines[sp].set_visible(False)
-    axes[0].set_ylabel("Precisión en actividades nuevas (%)")
+    axes[0].set_ylabel("Accuracy on new activities (%)")
     axes[2].legend(frameon=False, fontsize=9, loc="lower right")
-    fig.suptitle("Aprender una actividad nueva con pocos segundos (6 actividades y 10 personas nunca vistas)",
+    fig.suptitle("Few-shot activity recognition on WISDM (6 activities and 10 participants held out)",
                  fontsize=12, x=0.01, ha="left")
     fig.tight_layout()
     fig.savefig(os.path.join(ROOT, "results", "fewshot.png"), dpi=160)

@@ -53,6 +53,15 @@ WEIGHTS_FREE = {"amplitud": 0.4, "forma": 0.6}
 RES_HZ = 50       # remuestreo de cada repetición
 _trapz = getattr(np, "trapezoid", None) or np.trapz
 DTW_HZ = 10       # resolución del alineamiento
+FINISH_HINT = "Return to the starting position and hold still to end the rep."
+LEGACY_PHASE_LABELS = {"Ida": "Outward", "Vuelta": "Return", "Movimiento": "Movement", "Pausa": "Pause"}
+
+
+def _translate_legacy_phases(phases):
+    for phase in phases:
+        label, _, number = phase[0].partition(" ")
+        if label in LEGACY_PHASE_LABELS and (not number or number.isdecimal()):
+            phase[0] = LEGACY_PHASE_LABELS[label] + (f" {number}" if number else "")
 
 
 def _unit(v):
@@ -158,14 +167,14 @@ def find_phases(c):
         if k == "mov":
             nm += 1
             if nmov == 2 and not at_rest_pause:
-                name = "Ida" if nm == 1 else "Vuelta"
+                name = "Outward" if nm == 1 else "Return"
             elif nmov == 1:
-                name = "Movimiento"
+                name = "Movement"
             else:
-                name = f"Movimiento {nm}"
+                name = f"Movement {nm}"
         else:
             np_ += 1
-            name = "Pausa" if kinds.count("pausa") == 1 else f"Pausa {np_}"
+            name = "Pause" if kinds.count("pausa") == 1 else f"Pause {np_}"
         phases.append([name, float(a), float(b), k])
     return phases
 
@@ -277,7 +286,7 @@ def score(ref, att, tempo=True):
     else:  # movimiento casi sin inclinación (p. ej. girar en el plano horizontal): rotación total
         amp_ref = float(_trapz(rc["w"], rc["t"]))
         amp_att = float(_trapz(ac["w"], ac["t"]))
-        unit = "° girados"
+        unit = "° rotated"
     amplitud = max(0.0, 1 - CFG["strict_amp"] * abs(amp_att - amp_ref) / max(amp_ref, 10.0))
     forma = float(np.clip(1 - (cost - 0.04) / 0.30, 0, 1))
     if tempo:
@@ -288,13 +297,13 @@ def score(ref, att, tempo=True):
     tips = []
     for p in phases if tempo else []:
         if p["ref"] >= 0.3 and abs(p["att"] - p["ref"]) / max(p["ref"], 0.5) > 0.2:
-            verbo = "más rápido" if p["att"] < p["ref"] else "más lento"
-            tips.append(f"{p['name']}: {verbo} ({p['att']:.1f} s; referencia {p['ref']:.1f} s)")
+            pace = "faster" if p["att"] < p["ref"] else "slower"
+            tips.append(f"{p['name']}: {pace} ({p['att']:.1f} s vs. {p['ref']:.1f} s reference)")
     if amplitud < 0.85:
-        tips.append(f"Amplitud: {'menos' if amp_att < amp_ref else 'más'} recorrido "
-                    f"({amp_att:.0f}{unit}; referencia {amp_ref:.0f}{unit})")
+        tips.append(f"Range: {'less' if amp_att < amp_ref else 'more'} movement "
+                    f"({amp_att:.0f}{unit} vs. {amp_ref:.0f}{unit} reference)")
     if forma < 0.7:
-        tips.append("Forma: el recorrido fue distinto al de referencia (más brusco o con otro perfil)")
+        tips.append("Shape differs from the reference. Watch the two curves to see where they diverge.")
     return {"total": round(total, 3), "tiempo": round(tiempo, 3), "amplitud": round(amplitud, 3),
             "forma": round(forma, 3), "phases": phases, "amp_ref": round(amp_ref, 1),
             "amp_att": round(amp_att, 1), "amp_unit": unit, "dur_ref": round(float(rc["t"][-1]), 2),
@@ -332,7 +341,7 @@ class Session:
         self.rest_checked = False
         self.reps = []
         self.pending = None
-        self.msg = "Quedate quieto/a"
+        self.msg = "Hold still"
         self.last_row = None
         self.started = time.time()
         self.long_still = 0.0
@@ -366,8 +375,8 @@ class Session:
                 if len(self.calib) > 5 and r["t"] - self.calib[0]["t"] >= CFG["calib_sec"] - 0.05:
                     self.trk.rest = _unit(np.mean([c["dir"] for c in self.calib], axis=0))
                     self.state = "ready"
-                    self.msg = "Listo, empezá el movimiento" if self.kind == "attempt" else \
-                        "Grabando: hacé el movimiento"
+                    self.msg = "Ready. Start the movement." if self.kind == "attempt" else \
+                        "Ready to record. Start the movement."
             else:
                 self.calib.clear()
             return
@@ -380,7 +389,7 @@ class Session:
                     k -= 1
                 self.rep = pre[k:]
                 self.state, self.still_since, self.rest_checked = "rep", None, False
-                self.msg = "Moviéndote…" if self.kind == "attempt" else "Grabando…"
+                self.msg = "Movement in progress…" if self.kind == "attempt" else "Recording…"
             return
         if self.state != "rep":
             return
@@ -404,10 +413,10 @@ class Session:
                 return self._finish_attempt(self.rep[: self.still_since + 1])
         else:
             self.still_since = None
-        if dur > float(self.ref["curve"]["t"][-1]) + 3 and not self.msg.startswith("Para cerrar"):
-            self.msg = "Para cerrar: volvé al inicio y quedate quieto/a"
+        if dur > float(self.ref["curve"]["t"][-1]) + 3 and self.msg != FINISH_HINT:
+            self.msg = FINISH_HINT
         if dur > CFG["max_rep_sec"]:
-            self._reset("Repetición demasiado larga, volvé a la posición inicial")
+            self._reset("Rep too long. Return to the starting position.")
 
     def _reset(self, msg):
         self.state, self.msg, self.rep, self.still_since = "ready", msg, [], None
@@ -416,27 +425,27 @@ class Session:
     def _curve(self, rows):
         """Curva recortada y validada, o (None, motivo)."""
         if len(rows) < 10:
-            return None, "No se detectó movimiento"
+            return None, "No movement detected"
         c = trim(_resample(rows))
         moved = float(_trapz(c["w"], c["t"]))
         if c["angle"].max() < CFG["min_amp"] and moved < 40:
-            return None, "Movimiento muy chico, probá de nuevo"
+            return None, "Movement too small. Try again."
         if c["t"][-1] < 0.6:
-            return None, "Movimiento muy corto, probá de nuevo"
+            return None, "Movement too short. Try again."
         return c, ""
 
     # ------------------------------------------------------------ cierre
     def finish_now(self, manager):
         """Botón Terminar (referencia) o Cerrar repetición (imitación). Devuelve (ok, mensaje)."""
         if self.state != "rep":
-            return False, "Todavía no se detectó movimiento" if self.state in ("ready", "calib") else ""
+            return False, "Waiting for movement" if self.state in ("ready", "calib") else ""
         if self.kind == "reference":
             c, why = self._curve(self.rep)
             if c is None:
-                self._reset(why + ". Hacé el movimiento de nuevo")
+                self._reset(why)
                 return False, why
             self.pending = {"curve": c, "phases": find_phases(c), "n_bursts": count_bursts(c), "at": time.time()}
-            self.state, self.msg = "pending", "Movimiento grabado. Falta ponerle nombre"
+            self.state, self.msg = "pending", "Movement recorded. Enter a name to save it."
             return True, ""
         # imitación: cerrar en el último instante con movimiento
         rows = self.rep if self.still_since is None else self.rep[: self.still_since + 1]
@@ -454,7 +463,7 @@ class Session:
         self.reps.append(res)
         if self.on_result:
             self.on_result(self, res)
-        self._reset(f"Repetición {res['n']}: {round(res['total'] * 100)}%")
+        self._reset(f"Rep {res['n']}: {round(res['total'] * 100)}%")
         return True
 
     on_result = None
@@ -501,11 +510,13 @@ class ExerciseManager:
                 d = json.load(open(REF_FILE))
                 for r in d.get("references", []):
                     r["curve"] = {k: np.array(v) for k, v in r["curve"].items()}
+                    _translate_legacy_phases(r["phases"])
                     self.refs[r["id"]] = r
                 self.results = d.get("results", {})
             elif os.path.exists(OLD_REF_FILE):  # migrar la referencia única de la versión anterior
                 r = json.load(open(OLD_REF_FILE))
                 r["curve"] = {k: np.array(v) for k, v in r["curve"].items()}
+                _translate_legacy_phases(r["phases"])
                 r["id"] = os.urandom(4).hex()
                 r["n_bursts"] = count_bursts(r["curve"])
                 self.refs[r["id"]] = r
@@ -529,7 +540,7 @@ class ExerciseManager:
         s = self.sessions.get(pid)
         if not s or not s.pending:
             return None
-        name = (str(name or "").strip() or "Movimiento")[:40]
+        name = (str(name or "").strip() or "Movement")[:40]
         existing = {r["name"] for r in self.refs.values()}
         base, k = name, 2
         while name in existing:
