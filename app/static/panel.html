@@ -131,7 +131,7 @@
     <div class="titles">
       <div class="brand">Ekuthon 2026 - ML Motion Replay</div>
       <h1 id="h1">Teach AI a movement</h1>
-      <div class="sub" id="sub">Learn activities, recognize it then</div>
+      <div class="sub" id="sub">Learn activities. Recognize them. Test your precision</div>
       <div class="tabs"><button class="tab on" id="tab-learn">Teach movements</button><button class="tab" id="tab-ex">Guided exercise</button></div>
     </div>
     <div class="qr"><img id="qr" alt="QR"><b>JOIN US</b></div>
@@ -355,7 +355,7 @@
     if (v === 'learn') $('library-heading').textContent = 'Learned activities';
     $('h1').textContent = v === 'learn' ? 'Teach AI a movement' : 'Imitate the movement';
     $('sub').textContent = v === 'learn'
-      ? 'Learn activities, recognize it then'
+      ? 'Learn activities. Recognize them. Test your precision'
       : 'Record a reference movement and choose one to imitate. Each rep is scored on timing, range and shape.';
     document.querySelectorAll('.slot').forEach(x => x.dataset.mode = '');
     renderLib(); renderPeople(); renderEx(); resizeEx(); resize();
